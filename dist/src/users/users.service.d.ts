@@ -1,5 +1,5 @@
-import { PrismaService } from '../prisma/prisma.service';
-import { Role } from '@prisma/client';
+import { PrismaService } from "../prisma/prisma.service";
+import { Role } from "@prisma/client";
 export declare class UsersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -10,7 +10,7 @@ export declare class UsersService {
         role?: Role;
         phone?: string;
         countryCode?: string;
-    }): import(".prisma/client").Prisma.Prisma__UserClient<{
+    }): Promise<{
         id: string;
         email: string;
         name: string;
@@ -21,7 +21,19 @@ export declare class UsersService {
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
+    }>;
+    findByEmail(email: string): Promise<{
+        id: string;
+        email: string;
+        name: string;
+        passwordHash: string;
+        role: import(".prisma/client").$Enums.Role;
+        phone: string | null;
+        countryCode: string | null;
+        country: import(".prisma/client").$Enums.Country;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<{
         id: string;
         email: string;

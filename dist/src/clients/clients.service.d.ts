@@ -1,4 +1,5 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { Country } from '@prisma/client';
 export declare class ClientsService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -7,6 +8,7 @@ export declare class ClientsService {
         email?: string;
         phone?: string;
         avatarUrl?: string;
+        country?: Country;
     }): import(".prisma/client").Prisma.Prisma__ClientClient<{
         id: string;
         email: string | null;
@@ -17,7 +19,7 @@ export declare class ClientsService {
         updatedAt: Date;
         avatarUrl: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    findAll(): import(".prisma/client").Prisma.PrismaPromise<{
+    findAll(country?: Country): import(".prisma/client").Prisma.PrismaPromise<{
         id: string;
         email: string | null;
         name: string;
@@ -27,7 +29,7 @@ export declare class ClientsService {
         updatedAt: Date;
         avatarUrl: string | null;
     }[]>;
-    findOne(id: string): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    findOne(id: string, country?: Country): import(".prisma/client").Prisma.Prisma__ClientClient<{
         id: string;
         email: string | null;
         name: string;
@@ -42,7 +44,7 @@ export declare class ClientsService {
         email: string;
         phone: string;
         avatarUrl: string;
-    }>): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    }>, country?: Country): Promise<{
         id: string;
         email: string | null;
         name: string;
@@ -51,8 +53,8 @@ export declare class ClientsService {
         createdAt: Date;
         updatedAt: Date;
         avatarUrl: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    remove(id: string): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    }>;
+    remove(id: string, country?: Country): Promise<{
         id: string;
         email: string | null;
         name: string;
@@ -61,5 +63,5 @@ export declare class ClientsService {
         createdAt: Date;
         updatedAt: Date;
         avatarUrl: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
+    }>;
 }

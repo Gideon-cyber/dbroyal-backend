@@ -29,7 +29,7 @@ let EventsService = class EventsService {
             data: {
                 ...data,
                 driveFolderId,
-            }
+            },
         });
     }
     findAll(country) {
@@ -38,13 +38,21 @@ let EventsService = class EventsService {
             include: { photos: true },
         });
     }
-    findOne(id) {
+    findOne(id, country) {
         return this.prisma.event.findUnique({
-            where: { id },
+            where: country ? { id, country } : { id },
             include: { photos: true },
         });
     }
-    update(id, data) {
+    async update(id, data, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         if (data?.date && typeof data.date === "string")
             data.date = new Date(data.date);
         if (data.googleDriveUrl) {
@@ -52,22 +60,49 @@ let EventsService = class EventsService {
         }
         return this.prisma.event.update({ where: { id }, data });
     }
-    remove(id) {
+    async remove(id, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         return this.prisma.event.delete({ where: { id } });
     }
-    addPhotos(eventId, photos) {
+    async addPhotos(eventId, photos, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id: eventId, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         return this.prisma.photo.createMany({
             data: photos.map((p) => ({ ...p, eventId })),
         });
     }
-    listPhotos(eventId) {
+    async listPhotos(eventId, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id: eventId, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         return this.prisma.photo.findMany({ where: { eventId } });
     }
-    async syncPhotosFromGoogleDrive(eventId) {
-        const event = await this.prisma.event.findUnique({
-            where: { id: eventId },
+    async syncPhotosFromGoogleDrive(eventId, country) {
+        const event = await this.prisma.event.findFirst({
+            where: country ? { id: eventId, country } : { id: eventId },
         });
-        if (!event?.googleDriveUrl) {
+        if (!event) {
+            throw new Error("Event not found");
+        }
+        if (!event.googleDriveUrl) {
             throw new Error("Event does not have a Google Drive URL configured");
         }
         const images = await this.googleDriveService.fetchImagesFromFolder(event.googleDriveUrl);
@@ -78,14 +113,23 @@ let EventsService = class EventsService {
             caption: img.name,
             status: "COMPLETE",
         }));
-        await this.prisma.photo.deleteMany({ where: { eventId } });
-        await this.prisma.photo.createMany({ data: photos });
+        await this.prisma.$transaction([
+            this.prisma.photo.deleteMany({ where: { eventId } }),
+            this.prisma.photo.createMany({ data: photos }),
+        ]);
         return { synced: photos.length, photos: images };
     }
-    async createShareableLink(photoIds) {
+    async createShareableLink(photoIds, country) {
         const photos = await this.prisma.photo.findMany({
             where: { id: { in: photoIds } },
+            include: { event: true },
         });
+        if (country) {
+            const invalidPhoto = photos.find(p => p.event?.country !== country);
+            if (invalidPhoto) {
+                throw new Error('Event not found');
+            }
+        }
         const driveFileIds = photos
             .map((p) => {
             const match = p.url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -97,11 +141,14 @@ let EventsService = class EventsService {
         }
         return this.googleDriveService.createShareableLinkForPhotos(driveFileIds);
     }
-    async getGoogleDriveImages(eventId) {
-        const event = await this.prisma.event.findUnique({
-            where: { id: eventId },
+    async getGoogleDriveImages(eventId, country) {
+        const event = await this.prisma.event.findFirst({
+            where: country ? { id: eventId, country } : { id: eventId },
         });
-        if (!event?.googleDriveUrl) {
+        if (!event) {
+            throw new Error("Event not found");
+        }
+        if (!event.googleDriveUrl) {
             throw new Error("Event does not have a Google Drive URL configured");
         }
         const images = await this.googleDriveService.fetchImagesFromFolder(event.googleDriveUrl);
@@ -113,7 +160,15 @@ let EventsService = class EventsService {
             images,
         };
     }
-    async createDownloadSelection(eventId, driveFileIds, expirationHours) {
+    async createDownloadSelection(eventId, driveFileIds, expirationHours, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id: eventId, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         const token = (0, crypto_1.randomUUID)();
         const expiresAt = expirationHours
             ? new Date(Date.now() + expirationHours * 60 * 60 * 1000)
@@ -132,13 +187,16 @@ let EventsService = class EventsService {
             expiresAt: selection.expiresAt,
         };
     }
-    async getDownloadSelection(token) {
+    async getDownloadSelection(token, country) {
         const selection = await this.prisma.downloadSelection.findUnique({
             where: { token },
             include: { event: true },
         });
         if (!selection) {
             throw new Error("Download selection not found");
+        }
+        if (country && selection.event.country !== country) {
+            throw new Error('Download selection not found');
         }
         if (selection.expiresAt && selection.expiresAt < new Date()) {
             throw new Error("Download selection has expired");
@@ -161,7 +219,15 @@ let EventsService = class EventsService {
             expiresAt: selection.expiresAt,
         };
     }
-    async createDownloadSelectionFromPhotos(eventId, photoIds, expirationHours) {
+    async createDownloadSelectionFromPhotos(eventId, photoIds, expirationHours, country) {
+        if (country) {
+            const event = await this.prisma.event.findFirst({
+                where: { id: eventId, country },
+            });
+            if (!event) {
+                throw new Error('Event not found');
+            }
+        }
         const photos = await this.prisma.photo.findMany({
             where: {
                 id: { in: photoIds },
@@ -177,7 +243,7 @@ let EventsService = class EventsService {
         if (driveFileIds.length === 0) {
             throw new Error("No valid Google Drive file IDs found in selected photos");
         }
-        return this.createDownloadSelection(eventId, driveFileIds, expirationHours);
+        return this.createDownloadSelection(eventId, driveFileIds, expirationHours, country);
     }
     extractDriveFileIdFromUrl(url) {
         const match = url.match(/id=([a-zA-Z0-9_-]+)/);

@@ -13,6 +13,8 @@ const passport_1 = require("@nestjs/passport");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
+const users_module_1 = require("../users/users.module");
+const prisma_module_1 = require("../prisma/prisma.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -21,9 +23,11 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             passport_1.PassportModule,
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-                signOptions: { expiresIn: '24h' },
+                secret: process.env.JWT_SECRET || "your-secret-key-change-in-production",
+                signOptions: { expiresIn: "24h" },
             }),
+            users_module_1.UsersModule,
+            prisma_module_1.PrismaModule,
         ],
         controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy],

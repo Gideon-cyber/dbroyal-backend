@@ -5,8 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -62,6 +63,8 @@ model User {
 
   assignments   BookingAssignment[]
   uploads       Photo[]
+
+  @@index([email])
 }
 
 model Client {
@@ -76,6 +79,8 @@ model Client {
 
   events   Event[]
   bookings Booking[]
+
+  @@index([email])
 }
 
 model Event {
@@ -119,6 +124,7 @@ model Photo {
 
   @@index([eventId])
   @@index([driveFileId])
+  @@index([status])
 }
 
 model DownloadSelection {

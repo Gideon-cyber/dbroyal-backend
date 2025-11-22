@@ -39,18 +39,45 @@ let BookingsService = class BookingsService {
             include: { assigned: true, client: true, event: true }
         });
     }
-    findOne(id) {
-        return this.prisma.booking.findUnique({ where: { id }, include: { assigned: true, client: true, event: true } });
+    findOne(id, country) {
+        return this.prisma.booking.findUnique({
+            where: country ? { id, country } : { id },
+            include: { assigned: true, client: true, event: true }
+        });
     }
-    update(id, data) {
+    async update(id, data, country) {
+        if (country) {
+            const booking = await this.prisma.booking.findFirst({
+                where: { id, country },
+            });
+            if (!booking) {
+                throw new Error('Booking not found');
+            }
+        }
         if (data?.dateTime && typeof data.dateTime === 'string')
             data.dateTime = new Date(data.dateTime);
         return this.prisma.booking.update({ where: { id }, data });
     }
-    remove(id) {
+    async remove(id, country) {
+        if (country) {
+            const booking = await this.prisma.booking.findFirst({
+                where: { id, country },
+            });
+            if (!booking) {
+                throw new Error('Booking not found');
+            }
+        }
         return this.prisma.booking.delete({ where: { id } });
     }
-    assignUsers(id, userIds) {
+    async assignUsers(id, userIds, country) {
+        if (country) {
+            const booking = await this.prisma.booking.findFirst({
+                where: { id, country },
+            });
+            if (!booking) {
+                throw new Error('Booking not found');
+            }
+        }
         return this.prisma.$transaction([
             this.prisma.bookingAssignment.deleteMany({ where: { bookingId: id } }),
             this.prisma.bookingAssignment.createMany({ data: userIds.map((userId) => ({ bookingId: id, userId })) }),

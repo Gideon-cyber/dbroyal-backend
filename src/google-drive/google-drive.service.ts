@@ -43,9 +43,7 @@ export class GoogleDriveService {
   /**
    * Fetch all image files from a Google Drive folder
    */
-  async fetchImagesFromFolder(
-    folderUrl: string
-  ): Promise<
+  async fetchImagesFromFolder(folderUrl: string): Promise<
     {
       id: string;
       name: string;
@@ -105,14 +103,21 @@ export class GoogleDriveService {
 
       const folderId = folder.data.id;
 
-      // Copy selected files to the new folder
-      for (const photoId of photoIds) {
-        await this.drive.files.copy({
-          fileId: photoId,
-          requestBody: {
-            parents: [folderId],
-          },
-        });
+      // Copy selected files to the new folder in batches to avoid rate limits
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < photoIds.length; i += BATCH_SIZE) {
+        const batch = photoIds.slice(i, i + BATCH_SIZE);
+
+        await Promise.all(
+          batch.map(photoId =>
+            this.drive.files.copy({
+              fileId: photoId,
+              requestBody: {
+                parents: [folderId],
+              },
+            })
+          )
+        );
       }
 
       // Make folder publicly accessible
@@ -164,19 +169,21 @@ export class GoogleDriveService {
           try {
             const file = await this.drive.files.get({
               fileId,
-              fields: 'id, name, mimeType, size, webViewLink, thumbnailLink',
+              fields: "id, name, mimeType, size, webViewLink, thumbnailLink",
             });
             return {
-              id: file.data.id || '',
-              name: file.data.name || '',
-              mimeType: file.data.mimeType || '',
-              size: file.data.size || '0',
-              webViewLink: file.data.webViewLink || '',
-              thumbnailLink: file.data.thumbnailLink || '',
+              id: file.data.id || "",
+              name: file.data.name || "",
+              mimeType: file.data.mimeType || "",
+              size: file.data.size || "0",
+              webViewLink: file.data.webViewLink || "",
+              thumbnailLink: file.data.thumbnailLink || "",
               downloadLink: `https://drive.google.com/uc?export=download&id=${file.data.id}`,
             };
           } catch (error) {
-            this.logger.warn(`Failed to fetch metadata for file ${fileId}: ${error.message}`);
+            this.logger.warn(
+              `Failed to fetch metadata for file ${fileId}: ${error.message}`
+            );
             return null;
           }
         })
@@ -185,26 +192,28 @@ export class GoogleDriveService {
       return filesData.filter(Boolean);
     } catch (error) {
       this.logger.error(`Failed to fetch files metadata: ${error.message}`);
-      throw new Error('Failed to fetch files metadata');
+      throw new Error("Failed to fetch files metadata");
     }
   }
 
   /**
    * Download file content as buffer (useful for ZIP creation)
    */
-  async downloadFileAsBuffer(fileId: string): Promise<{ buffer: Buffer; filename: string }> {
+  async downloadFileAsBuffer(
+    fileId: string
+  ): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const file = await this.drive.files.get({
         fileId,
-        fields: 'name',
+        fields: "name",
       });
 
       const response = await this.drive.files.get(
         {
           fileId,
-          alt: 'media',
+          alt: "media",
         },
-        { responseType: 'arraybuffer' }
+        { responseType: "arraybuffer" }
       );
 
       return {

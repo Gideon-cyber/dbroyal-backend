@@ -14,65 +14,94 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClientsController = void 0;
 const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
 const clients_service_1 = require("./clients.service");
+const dto_1 = require("./dto");
+const client_1 = require("@prisma/client");
+const country_decorator_1 = require("../common/decorators/country.decorator");
+const api_country_header_decorator_1 = require("../common/decorators/api-country-header.decorator");
 let ClientsController = class ClientsController {
     constructor(clientsService) {
         this.clientsService = clientsService;
     }
-    create(body) {
-        return this.clientsService.create(body);
+    create(country, body) {
+        return this.clientsService.create({ ...body, country });
     }
-    findAll() {
-        return this.clientsService.findAll();
+    findAll(country) {
+        return this.clientsService.findAll(country);
     }
-    findOne(id) {
-        return this.clientsService.findOne(id);
+    findOne(country, id) {
+        return this.clientsService.findOne(id, country);
     }
-    update(id, body) {
-        return this.clientsService.update(id, body);
+    update(country, id, body) {
+        return this.clientsService.update(id, body, country);
     }
-    remove(id) {
-        return this.clientsService.remove(id);
+    remove(country, id) {
+        return this.clientsService.remove(id, country);
     }
 };
 exports.ClientsController = ClientsController;
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    (0, swagger_1.ApiOperation)({ summary: "Create a new client" }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: "Client created successfully" }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Bad request" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, dto_1.CreateClientDto]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: "Get all clients" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Returns all clients" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Get client by ID" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Client ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Returns the client" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client not found" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, common_1.Patch)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Update a client" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Client ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Client updated successfully" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client not found" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Param)("id")),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, String, dto_1.UpdateClientDto]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Delete a client" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Client ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Client deleted successfully" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client not found" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "remove", null);
 exports.ClientsController = ClientsController = __decorate([
-    (0, common_1.Controller)('clients'),
+    (0, swagger_1.ApiTags)("clients"),
+    (0, api_country_header_decorator_1.ApiCountryHeader)(),
+    (0, common_1.Controller)("clients"),
     __metadata("design:paramtypes", [clients_service_1.ClientsService])
 ], ClientsController);
 //# sourceMappingURL=clients.controller.js.map

@@ -40,20 +40,53 @@ export class BookingsService {
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.booking.findUnique({ where: { id }, include: { assigned: true, client: true, event: true } });
+  findOne(id: string, country?: Country) {
+    return this.prisma.booking.findUnique({
+      where: country ? { id, country } : { id },
+      include: { assigned: true, client: true, event: true }
+    });
   }
 
-  update(id: string, data: any) {
+  async update(id: string, data: any, country?: Country) {
+    // Verify ownership before updating
+    if (country) {
+      const booking = await this.prisma.booking.findFirst({
+        where: { id, country },
+      });
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+    }
+
     if (data?.dateTime && typeof data.dateTime === 'string') data.dateTime = new Date(data.dateTime);
     return this.prisma.booking.update({ where: { id }, data });
   }
 
-  remove(id: string) {
+  async remove(id: string, country?: Country) {
+    // Verify ownership before deleting
+    if (country) {
+      const booking = await this.prisma.booking.findFirst({
+        where: { id, country },
+      });
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+    }
+
     return this.prisma.booking.delete({ where: { id } });
   }
 
-  assignUsers(id: string, userIds: string[]) {
+  async assignUsers(id: string, userIds: string[], country?: Country) {
+    // Verify ownership before assigning
+    if (country) {
+      const booking = await this.prisma.booking.findFirst({
+        where: { id, country },
+      });
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+    }
+
     return this.prisma.$transaction([
       this.prisma.bookingAssignment.deleteMany({ where: { bookingId: id } }),
       this.prisma.bookingAssignment.createMany({ data: userIds.map((userId) => ({ bookingId: id, userId })) }),

@@ -13,47 +13,58 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = require("bcrypt");
+const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
-    constructor(jwtService) {
+    constructor(jwtService, prisma) {
         this.jwtService = jwtService;
-        this.users = [];
+        this.prisma = prisma;
     }
     async signUp(signUpDto) {
-        const { email, password, name } = signUpDto;
-        const existingUser = this.users.find(user => user.email === email);
+        const { email, password, name, role } = signUpDto;
+        const existingUser = await this.prisma.user.findUnique({
+            where: { email },
+        });
         if (existingUser) {
-            throw new common_1.ConflictException('User with this email already exists');
+            throw new common_1.ConflictException("User with this email already exists");
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = {
-            id: Date.now().toString(),
-            email,
-            password: hashedPassword,
-            name,
-        };
-        this.users.push(user);
-        const payload = { sub: user.id, email: user.email };
+        const user = await this.prisma.user.create({
+            data: {
+                email,
+                passwordHash: hashedPassword,
+                name,
+                role: role || "PHOTOGRAPHER",
+            },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                country: true,
+                phone: true,
+                createdAt: true,
+            },
+        });
+        const payload = { sub: user.id, email: user.email, role: user.role };
         const accessToken = await this.jwtService.signAsync(payload);
         return {
             accessToken,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-            },
+            user,
         };
     }
     async login(loginDto) {
         const { email, password } = loginDto;
-        const user = this.users.find(u => u.email === email);
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
         if (!user) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
+            throw new common_1.UnauthorizedException("Invalid credentials");
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
+            throw new common_1.UnauthorizedException("Invalid credentials");
         }
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, role: user.role };
         const accessToken = await this.jwtService.signAsync(payload);
         return {
             accessToken,
@@ -61,24 +72,31 @@ let AuthService = class AuthService {
                 id: user.id,
                 email: user.email,
                 name: user.name,
+                role: user.role,
+                country: user.country,
+                phone: user.phone,
             },
         };
     }
     async validateUser(userId) {
-        const user = this.users.find(u => u.id === userId);
-        if (!user) {
-            return null;
-        }
-        return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-        };
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                country: true,
+                phone: true,
+            },
+        });
+        return user;
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __metadata("design:paramtypes", [jwt_1.JwtService,
+        prisma_service_1.PrismaService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

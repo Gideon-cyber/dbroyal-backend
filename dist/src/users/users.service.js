@@ -12,12 +12,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const bcrypt = require("bcrypt");
 let UsersService = class UsersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    create(data) {
-        return this.prisma.user.create({ data });
+    async create(data) {
+        const hashedPassword = data.passwordHash.startsWith("$2")
+            ? data.passwordHash
+            : await bcrypt.hash(data.passwordHash, 10);
+        return this.prisma.user.create({
+            data: {
+                ...data,
+                passwordHash: hashedPassword,
+            },
+        });
+    }
+    async findByEmail(email) {
+        return this.prisma.user.findUnique({ where: { email } });
     }
     findAll() {
         return this.prisma.user.findMany();

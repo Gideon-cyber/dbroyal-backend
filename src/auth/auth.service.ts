@@ -1,69 +1,84 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { SignUpDto, LoginDto } from './dto/create-auth.dto';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { SignUpDto, LoginDto } from "./dto/create-auth.dto";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class AuthService {
-  // In-memory user storage for demonstration
-  // In production, this would be replaced with a database (Prisma/TypeORM)
-  private users: Array<{ id: string; email: string; password: string; name: string }> = [];
-
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private prisma: PrismaService
+  ) {}
 
   async signUp(signUpDto: SignUpDto) {
-    const { email, password, name } = signUpDto;
+    const { email, password, name, role } = signUpDto;
 
     // Check if user already exists
-    const existingUser = this.users.find(user => user.email === email);
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException("User with this email already exists");
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const user = {
-      id: Date.now().toString(),
-      email,
-      password: hashedPassword,
-      name,
-    };
-
-    this.users.push(user);
+    // Create user in database
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        passwordHash: hashedPassword,
+        name,
+        role: role || "PHOTOGRAPHER",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        country: true,
+        phone: true,
+        createdAt: true,
+      },
+    });
 
     // Generate JWT token
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwtService.signAsync(payload);
 
     return {
       accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
+      user,
     };
   }
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user
-    const user = this.users.find(u => u.email === email);
+    // Find user in database
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Generate JWT token
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwtService.signAsync(payload);
 
     return {
@@ -72,19 +87,26 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
+        country: user.country,
+        phone: user.phone,
       },
     };
   }
 
   async validateUser(userId: string) {
-    const user = this.users.find(u => u.id === userId);
-    if (!user) {
-      return null;
-    }
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-    };
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        country: true,
+        phone: true,
+      },
+    });
+
+    return user;
   }
 }

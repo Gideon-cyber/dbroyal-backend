@@ -1,13 +1,10 @@
-import { ClientsService } from './clients.service';
+import { ClientsService } from "./clients.service";
+import { CreateClientDto, UpdateClientDto } from "./dto";
+import { Country } from "@prisma/client";
 export declare class ClientsController {
     private readonly clientsService;
     constructor(clientsService: ClientsService);
-    create(body: {
-        name: string;
-        email?: string;
-        phone?: string;
-        avatarUrl?: string;
-    }): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    create(country: Country, body: CreateClientDto): import(".prisma/client").Prisma.Prisma__ClientClient<{
         id: string;
         email: string | null;
         name: string;
@@ -17,7 +14,7 @@ export declare class ClientsController {
         updatedAt: Date;
         avatarUrl: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    findAll(): import(".prisma/client").Prisma.PrismaPromise<{
+    findAll(country: Country): import(".prisma/client").Prisma.PrismaPromise<{
         id: string;
         email: string | null;
         name: string;
@@ -27,7 +24,7 @@ export declare class ClientsController {
         updatedAt: Date;
         avatarUrl: string | null;
     }[]>;
-    findOne(id: string): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    findOne(country: Country, id: string): import(".prisma/client").Prisma.Prisma__ClientClient<{
         id: string;
         email: string | null;
         name: string;
@@ -37,7 +34,7 @@ export declare class ClientsController {
         updatedAt: Date;
         avatarUrl: string | null;
     }, null, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    update(id: string, body: any): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    update(country: Country, id: string, body: UpdateClientDto): Promise<{
         id: string;
         email: string | null;
         name: string;
@@ -46,8 +43,8 @@ export declare class ClientsController {
         createdAt: Date;
         updatedAt: Date;
         avatarUrl: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    remove(id: string): import(".prisma/client").Prisma.Prisma__ClientClient<{
+    }>;
+    remove(country: Country, id: string): Promise<{
         id: string;
         email: string | null;
         name: string;
@@ -56,5 +53,5 @@ export declare class ClientsController {
         createdAt: Date;
         updatedAt: Date;
         avatarUrl: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
+    }>;
 }

@@ -1,16 +1,9 @@
-import { UsersService } from './users.service';
-import { Role } from '@prisma/client';
+import { UsersService } from "./users.service";
+import { CreateUserDto, UpdateUserDto } from "./dto";
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
-    create(body: {
-        name: string;
-        email: string;
-        passwordHash: string;
-        role?: Role;
-        phone?: string;
-        countryCode?: string;
-    }): import(".prisma/client").Prisma.Prisma__UserClient<{
+    create(body: CreateUserDto): Promise<{
         id: string;
         email: string;
         name: string;
@@ -21,7 +14,7 @@ export declare class UsersController {
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
+    }>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<{
         id: string;
         email: string;
@@ -46,7 +39,7 @@ export declare class UsersController {
         createdAt: Date;
         updatedAt: Date;
     }, null, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    update(id: string, body: any): import(".prisma/client").Prisma.Prisma__UserClient<{
+    update(id: string, body: UpdateUserDto): import(".prisma/client").Prisma.Prisma__UserClient<{
         id: string;
         email: string;
         name: string;

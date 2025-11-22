@@ -19,16 +19,36 @@ let ClientsService = class ClientsService {
     create(data) {
         return this.prisma.client.create({ data });
     }
-    findAll() {
-        return this.prisma.client.findMany();
+    findAll(country) {
+        return this.prisma.client.findMany({
+            where: country ? { country } : undefined,
+        });
     }
-    findOne(id) {
-        return this.prisma.client.findUnique({ where: { id } });
+    findOne(id, country) {
+        return this.prisma.client.findUnique({
+            where: country ? { id, country } : { id },
+        });
     }
-    update(id, data) {
+    async update(id, data, country) {
+        if (country) {
+            const client = await this.prisma.client.findFirst({
+                where: { id, country },
+            });
+            if (!client) {
+                throw new Error('Client not found');
+            }
+        }
         return this.prisma.client.update({ where: { id }, data });
     }
-    remove(id) {
+    async remove(id, country) {
+        if (country) {
+            const client = await this.prisma.client.findFirst({
+                where: { id, country },
+            });
+            if (!client) {
+                throw new Error('Client not found');
+            }
+        }
         return this.prisma.client.delete({ where: { id } });
     }
 };

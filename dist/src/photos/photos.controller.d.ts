@@ -1,4 +1,5 @@
-import { PhotosService } from './photos.service';
+import { PhotosService } from "./photos.service";
+import { UpdatePhotoDto } from "./dto";
 export declare class PhotosController {
     private readonly photosService;
     constructor(photosService: PhotosService);
@@ -22,7 +23,7 @@ export declare class PhotosController {
         caption: string | null;
         uploadedById: string | null;
     }, null, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    update(id: string, body: any): import(".prisma/client").Prisma.Prisma__PhotoClient<{
+    update(id: string, body: UpdatePhotoDto): import(".prisma/client").Prisma.Prisma__PhotoClient<{
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.UploadStatus;

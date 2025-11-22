@@ -10,35 +10,64 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoginDto = exports.SignUpDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 class SignUpDto {
 }
 exports.SignUpDto = SignUpDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: "User email address",
+        example: "user@example.com",
+    }),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "email", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: "User password",
+        minLength: 6,
+        example: "SecurePass123",
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "password", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: "User full name", example: "John Doe" }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: "User role",
+        enum: client_1.Role,
+        enumName: "Role",
+        default: client_1.Role.PHOTOGRAPHER,
+        example: client_1.Role.PHOTOGRAPHER,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.Role),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "role", void 0);
 class LoginDto {
 }
 exports.LoginDto = LoginDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: "User email address",
+        example: "user@example.com",
+    }),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "email", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: "User password", example: "SecurePass123" }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)

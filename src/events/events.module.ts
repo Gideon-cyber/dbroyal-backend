@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { EventsService } from './events.service';
-import { EventsController } from './events.controller';
-import { DownloadController } from './download.controller';
-import { PrismaModule } from '../prisma/prisma.module';
-import { GoogleDriveModule } from '../google-drive/google-drive.module';
+import { Module } from "@nestjs/common";
+import { EventsService } from "./events.service";
+import { EventsController } from "./events.controller";
+import { DownloadController } from "./download.controller";
+import { PrismaModule } from "../prisma/prisma.module";
+import { GoogleDriveModule } from "../google-drive/google-drive.module";
 
 @Module({
   imports: [PrismaModule, GoogleDriveModule],

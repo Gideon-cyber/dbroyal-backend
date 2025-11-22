@@ -7,23 +7,28 @@ This update significantly improves the Google Drive integration with better perf
 ## New Features
 
 ### 1. **Token-Based Download Selections**
+
 Users can now create secure, shareable links for selected photos with optional expiration.
 
 ### 2. **Direct ZIP Downloads**
+
 Download multiple selected photos as a single ZIP file without creating Google Drive folders.
 
 ### 3. **Improved Data Structure**
+
 - Store Google Drive folder IDs separately for faster access
 - Store individual file IDs with each photo for direct operations
 - Track download selections with expiration support
 
 ### 4. **Better Performance**
+
 - Reduced API calls by caching folder and file IDs
 - Direct file access without URL parsing
 
 ## Schema Changes
 
 ### Event Model
+
 ```prisma
 model Event {
   // ... existing fields
@@ -33,6 +38,7 @@ model Event {
 ```
 
 ### Photo Model
+
 ```prisma
 model Photo {
   // ... existing fields
@@ -41,6 +47,7 @@ model Photo {
 ```
 
 ### New DownloadSelection Model
+
 ```prisma
 model DownloadSelection {
   id         String   @id @default(cuid())
@@ -55,9 +62,11 @@ model DownloadSelection {
 ## Migration Steps
 
 ### 1. Update Prisma Schema
+
 The schema has already been updated in `/prisma/schema.prisma`
 
 ### 2. Run Migration
+
 ```bash
 # Generate Prisma client
 npm run prisma:generate
@@ -71,6 +80,7 @@ yarn prisma migrate dev --name add_download_selections
 ```
 
 ### 3. Install Required Package (Optional for ZIP downloads)
+
 ```bash
 npm install archiver
 npm install -D @types/archiver
@@ -82,20 +92,23 @@ yarn add -D @types/archiver
 ## New API Endpoints
 
 ### 1. Create Download Selection
+
 **Endpoint:** `POST /events/:eventId/download-selection`
 
 **Description:** Create a shareable link for selected photos with optional expiration.
 
 **Request Body:**
+
 ```json
 {
-  "photoIds": ["photo_id_1", "photo_id_2"],  // Use this for database photos
-  "driveFileIds": ["file_id_1", "file_id_2"],  // OR use this for direct Drive IDs
-  "expirationHours": 48  // Optional: link expires after X hours
+  "photoIds": ["photo_id_1", "photo_id_2"], // Use this for database photos
+  "driveFileIds": ["file_id_1", "file_id_2"], // OR use this for direct Drive IDs
+  "expirationHours": 48 // Optional: link expires after X hours
 }
 ```
 
 **Response:**
+
 ```json
 {
   "token": "550e8400-e29b-41d4-a716-446655440000",
@@ -105,6 +118,7 @@ yarn add -D @types/archiver
 ```
 
 **Usage:**
+
 ```bash
 # Create selection from database photos
 curl -X POST http://localhost:3000/events/evt_123/download-selection \
@@ -126,11 +140,13 @@ curl -X POST http://localhost:3000/events/evt_123/download-selection \
 ---
 
 ### 2. View Download Selection
+
 **Endpoint:** `GET /download/:token`
 
 **Description:** View details of a download selection.
 
 **Response:**
+
 ```json
 {
   "event": {
@@ -152,6 +168,7 @@ curl -X POST http://localhost:3000/events/evt_123/download-selection \
 ---
 
 ### 3. Download as ZIP
+
 **Endpoint:** `GET /download/:token/zip`
 
 **Description:** Download all selected photos as a single ZIP file.
@@ -159,6 +176,7 @@ curl -X POST http://localhost:3000/events/evt_123/download-selection \
 **Response:** Binary ZIP file download
 
 **Usage:**
+
 ```bash
 # Download ZIP
 curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/zip
@@ -170,11 +188,13 @@ curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/z
 ---
 
 ### 4. Cleanup Expired Selections
+
 **Endpoint:** `DELETE /download/cleanup`
 
 **Description:** Delete all expired download selections (maintenance endpoint).
 
 **Response:**
+
 ```json
 {
   "deleted": 15
@@ -186,6 +206,7 @@ curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/z
 ## Updated Workflow
 
 ### Old Workflow (Still Supported)
+
 ```
 1. User selects photos
 2. POST /events/:id/create-shareable-link
@@ -194,6 +215,7 @@ curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/z
 ```
 
 ### New Workflow (Recommended)
+
 ```
 1. User selects photos
 2. POST /events/:id/download-selection
@@ -206,15 +228,15 @@ curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/z
 
 ## Comparison: Old vs New Approach
 
-| Feature | Old (Google Drive Folder) | New (Download Selection) |
-|---------|--------------------------|-------------------------|
-| **Speed** | Slow (copies files) | Fast (no copying) |
-| **Storage** | Creates duplicate folders | No duplicates |
-| **Expiration** | Manual cleanup | Automatic |
-| **Security** | Public folder link | Unique token |
-| **Tracking** | No tracking | Full tracking in DB |
-| **ZIP Download** | Manual from Google Drive | Direct ZIP endpoint |
-| **Cost** | Uses Drive storage quota | Minimal quota usage |
+| Feature          | Old (Google Drive Folder) | New (Download Selection) |
+| ---------------- | ------------------------- | ------------------------ |
+| **Speed**        | Slow (copies files)       | Fast (no copying)        |
+| **Storage**      | Creates duplicate folders | No duplicates            |
+| **Expiration**   | Manual cleanup            | Automatic                |
+| **Security**     | Public folder link        | Unique token             |
+| **Tracking**     | No tracking               | Full tracking in DB      |
+| **ZIP Download** | Manual from Google Drive  | Direct ZIP endpoint      |
+| **Cost**         | Uses Drive storage quota  | Minimal quota usage      |
 
 ## Frontend Integration
 
@@ -222,16 +244,19 @@ curl -O -J http://localhost:3000/download/550e8400-e29b-41d4-a716-446655440000/z
 
 ```typescript
 // Create download selection
-async function createDownloadSelection(eventId: string, selectedPhotoIds: string[]) {
+async function createDownloadSelection(
+  eventId: string,
+  selectedPhotoIds: string[]
+) {
   const response = await fetch(`/api/events/${eventId}/download-selection`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       photoIds: selectedPhotoIds,
       expirationHours: 48, // Link expires in 48 hours
     }),
   });
-  
+
   const data = await response.json();
   return data.shareLink; // /download/{token}
 }
@@ -246,15 +271,15 @@ async function viewSelection(token: string) {
 function downloadAsZip(token: string) {
   // Direct download link
   window.location.href = `/api/download/${token}/zip`;
-  
+
   // OR use fetch for more control
   fetch(`/api/download/${token}/zip`)
-    .then(res => res.blob())
-    .then(blob => {
+    .then((res) => res.blob())
+    .then((blob) => {
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'photos.zip';
+      a.download = "photos.zip";
       a.click();
     });
 }
@@ -291,11 +316,11 @@ export default function PhotoGallery({ eventId, photos }) {
           expirationHours: 48,
         }),
       });
-      
+
       const data = await response.json();
       const fullLink = `${window.location.origin}${data.shareLink}`;
       setShareLink(fullLink);
-      
+
       // Copy to clipboard
       navigator.clipboard.writeText(fullLink);
       alert('Link copied to clipboard!');
@@ -325,7 +350,7 @@ export default function PhotoGallery({ eventId, photos }) {
         <button onClick={createShareLink} disabled={selected.length === 0 || loading}>
           {loading ? 'Creating...' : `Create Share Link (${selected.length} selected)`}
         </button>
-        
+
         {shareLink && (
           <div>
             <p>Share this link:</p>
@@ -341,6 +366,7 @@ export default function PhotoGallery({ eventId, photos }) {
 ## Backward Compatibility
 
 All existing endpoints remain functional:
+
 - ✅ `POST /events/:id/create-shareable-link` - Still works (creates Google Drive folder)
 - ✅ `GET /events/:id/google-drive-images` - Still works
 - ✅ `POST /events/:id/sync-google-drive` - Still works
@@ -348,6 +374,7 @@ All existing endpoints remain functional:
 ## Performance Improvements
 
 ### Before
+
 ```
 1. Parse URL every time → Extract ID → API call
 2. Create folder → Copy files → Set permissions
@@ -355,6 +382,7 @@ All existing endpoints remain functional:
 ```
 
 ### After
+
 ```
 1. Store folder ID on create → Direct access
 2. Store file IDs with photos → No parsing needed
@@ -366,15 +394,17 @@ All existing endpoints remain functional:
 ## Security Improvements
 
 ### Token-Based Access
+
 - Each selection has a unique, unguessable token
 - Tokens can expire automatically
 - Track who accesses what and when
 
 ### Automatic Cleanup
+
 ```typescript
 // Run daily cleanup job
 async function dailyCleanup() {
-  const result = await fetch('/api/download/cleanup', { method: 'DELETE' });
+  const result = await fetch("/api/download/cleanup", { method: "DELETE" });
   console.log(`Cleaned up ${result.deleted} expired selections`);
 }
 ```
@@ -385,9 +415,9 @@ You can set up a cron job to automatically clean up expired selections:
 
 ```typescript
 // In your main.ts or a dedicated service
-import { Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { EventsService } from './events/events.service';
+import { Injectable } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { EventsService } from "./events/events.service";
 
 @Injectable()
 export class CleanupService {
@@ -420,6 +450,7 @@ export class CleanupService {
 ### Issue: "Property 'downloadSelection' does not exist on PrismaService"
 
 **Solution:** Regenerate Prisma client
+
 ```bash
 npm run prisma:generate
 # or
@@ -429,6 +460,7 @@ yarn prisma:generate
 ### Issue: "Cannot find module 'archiver'"
 
 **Solution:** Install archiver package
+
 ```bash
 npm install archiver @types/archiver
 # or
@@ -437,7 +469,8 @@ yarn add archiver @types/archiver
 
 ### Issue: ZIP download is slow
 
-**Solution:** 
+**Solution:**
+
 - Limit number of photos per selection (e.g., max 50)
 - Implement streaming instead of loading all files in memory
 - Use background job for large ZIP files
@@ -445,22 +478,26 @@ yarn add archiver @types/archiver
 ## Next Steps
 
 1. **Run Migration:**
+
    ```bash
    yarn prisma:generate
    yarn prisma migrate dev --name add_download_selections
    ```
 
 2. **Install Archiver (Optional):**
+
    ```bash
    yarn add archiver @types/archiver
    ```
 
 3. **Test New Endpoints:**
+
    - Create a download selection
    - View it via token
    - Download as ZIP
 
 4. **Update Frontend:**
+
    - Implement new selection UI
    - Add share link functionality
    - Add ZIP download button
@@ -472,6 +509,7 @@ yarn add archiver @types/archiver
 ## Summary
 
 This update provides a much better user experience with:
+
 - ⚡ Faster operations
 - 🔒 Better security
 - 📦 Direct ZIP downloads

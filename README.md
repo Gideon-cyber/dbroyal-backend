@@ -5,6 +5,7 @@ Building a fully functional and scalable backend system with Nest.js for photogr
 ## 📸 Features
 
 ### Google Drive Integration (Enhanced)
+
 - **Connect Google Drive folders to events** - Admins can add Google Drive URLs to events
 - **Display images from Google Drive** - Automatically fetch and display images from linked folders
 - **Token-based photo selection** - Secure, shareable links with optional expiration
@@ -13,6 +14,71 @@ Building a fully functional and scalable backend system with Nest.js for photogr
 - **High performance** - Cached folder and file IDs for faster operations
 
 See [Setup Enhanced Features](./docs/SETUP_ENHANCED_FEATURES.md) for setup instructions.
+
+### Country-Based Multi-Tenancy
+
+The API implements country-based access control to support multi-region operations (Nigeria and UK). All requests are automatically scoped to a specific country.
+
+#### Country Detection
+
+The system detects the country from (in order of priority):
+
+1. **X-Country Header**
+   ```bash
+   curl -H "X-Country: NG" http://localhost:3000/events
+   ```
+
+2. **Subdomain**
+   ```bash
+   # Automatically detects NG
+   curl http://ng.yourdomain.com/events
+
+   # Automatically detects UK
+   curl http://uk.yourdomain.com/events
+   ```
+
+3. **Query Parameter**
+   ```bash
+   curl http://localhost:3000/events?country=UK
+   ```
+
+4. **Default**: Nigeria (NG) if no country is specified
+
+#### Country Scoping
+
+**Country-Scoped Resources:**
+- **Events** - Filtered by requesting country, includes all operations (photos, sync, downloads)
+- **Bookings** - Filtered by requesting country, includes assignments
+- **Clients** - Filtered by requesting country
+- **Download Links** - Region-locked to the country where they were created
+
+**Global Resources:**
+- **Users** - Accessible from all countries (staff can work across regions)
+
+#### Security
+
+- **Access Control**: Users cannot access resources from other countries even with valid IDs
+- **Generic Errors**: Failed cross-country access returns "not found" without revealing data existence
+- **Automatic Assignment**: New resources inherit country from request context
+
+#### Example Usage
+
+```bash
+# Create an event in Nigeria
+curl -X POST http://localhost:3000/events \
+  -H "X-Country: NG" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Lagos Wedding", "slug": "lagos-wedding", "category": "WEDDING"}'
+
+# Try to access from UK (will fail)
+curl -H "X-Country: UK" http://localhost:3000/events/{lagos-wedding-id}
+# Returns: null or 404
+
+# List UK events only
+curl -H "X-Country: UK" http://localhost:3000/events
+```
+
+See [Country Filtering Guide](./docs/COUNTRY_FILTERING.md) for complete documentation.
 
 ## 🚀 Quick Start
 
@@ -75,6 +141,7 @@ The API will be available at `http://localhost:3000`
 - **[Google Drive Setup Guide](./docs/GOOGLE_DRIVE_SETUP.md)** - Detailed Google Drive configuration
 - **[Get Google Credentials](./docs/HOW_TO_GET_GOOGLE_CREDENTIALS.md)** - Step-by-step credential setup
 - **[Google Drive API Documentation](./docs/GOOGLE_DRIVE_API.md)** - Complete API reference
+- **[Country Filtering Guide](./docs/COUNTRY_FILTERING.md)** - Country-based multi-tenancy documentation
 - **[Country Routing](./docs/COUNTRY_ROUTING.md)** - Multi-country support documentation
 
 ## 🏗️ Architecture

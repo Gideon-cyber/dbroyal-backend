@@ -1,11 +1,12 @@
-import { Response } from 'express';
-import { EventsService } from './events.service';
-import { GoogleDriveService } from '../google-drive/google-drive.service';
+import { Response } from "express";
+import { EventsService } from "./events.service";
+import { GoogleDriveService } from "../google-drive/google-drive.service";
+import { Country } from "@prisma/client";
 export declare class DownloadController {
     private readonly eventsService;
     private readonly googleDriveService;
     constructor(eventsService: EventsService, googleDriveService: GoogleDriveService);
-    getDownloadSelection(token: string): Promise<{
+    getDownloadSelection(country: Country, token: string): Promise<{
         event: {
             id: string;
             name: string;
@@ -18,5 +19,5 @@ export declare class DownloadController {
         createdAt: Date;
         expiresAt: Date;
     }>;
-    downloadAsZip(token: string, res: Response): Promise<void>;
+    downloadAsZip(country: Country, token: string, res: Response): Promise<void>;
 }

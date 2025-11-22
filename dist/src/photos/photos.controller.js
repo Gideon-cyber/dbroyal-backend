@@ -14,7 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PhotosController = void 0;
 const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
 const photos_service_1 = require("./photos.service");
+const dto_1 = require("./dto");
 let PhotosController = class PhotosController {
     constructor(photosService) {
         this.photosService = photosService;
@@ -35,34 +37,49 @@ let PhotosController = class PhotosController {
 exports.PhotosController = PhotosController;
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: "Get all photos" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Returns all photos" }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PhotosController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Get photo by ID" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Photo ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Returns the photo" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Photo not found" }),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PhotosController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Patch)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Update a photo" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Photo ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Photo updated successfully" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Photo not found" }),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, dto_1.UpdatePhotoDto]),
     __metadata("design:returntype", void 0)
 ], PhotosController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Delete a photo" }),
+    (0, swagger_1.ApiParam)({ name: "id", description: "Photo ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Photo deleted successfully" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Photo not found" }),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PhotosController.prototype, "remove", null);
 exports.PhotosController = PhotosController = __decorate([
-    (0, common_1.Controller)('photos'),
+    (0, swagger_1.ApiTags)("photos"),
+    (0, common_1.Controller)("photos"),
     __metadata("design:paramtypes", [photos_service_1.PhotosService])
 ], PhotosController);
 //# sourceMappingURL=photos.controller.js.map

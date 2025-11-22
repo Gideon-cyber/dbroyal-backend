@@ -74,13 +74,15 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
                 fields: "id, webViewLink",
             });
             const folderId = folder.data.id;
-            for (const photoId of photoIds) {
-                await this.drive.files.copy({
+            const BATCH_SIZE = 5;
+            for (let i = 0; i < photoIds.length; i += BATCH_SIZE) {
+                const batch = photoIds.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(photoId => this.drive.files.copy({
                     fileId: photoId,
                     requestBody: {
                         parents: [folderId],
                     },
-                });
+                })));
             }
             await this.drive.permissions.create({
                 fileId: folderId,
@@ -115,15 +117,15 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
                 try {
                     const file = await this.drive.files.get({
                         fileId,
-                        fields: 'id, name, mimeType, size, webViewLink, thumbnailLink',
+                        fields: "id, name, mimeType, size, webViewLink, thumbnailLink",
                     });
                     return {
-                        id: file.data.id || '',
-                        name: file.data.name || '',
-                        mimeType: file.data.mimeType || '',
-                        size: file.data.size || '0',
-                        webViewLink: file.data.webViewLink || '',
-                        thumbnailLink: file.data.thumbnailLink || '',
+                        id: file.data.id || "",
+                        name: file.data.name || "",
+                        mimeType: file.data.mimeType || "",
+                        size: file.data.size || "0",
+                        webViewLink: file.data.webViewLink || "",
+                        thumbnailLink: file.data.thumbnailLink || "",
                         downloadLink: `https://drive.google.com/uc?export=download&id=${file.data.id}`,
                     };
                 }
@@ -136,19 +138,19 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
         }
         catch (error) {
             this.logger.error(`Failed to fetch files metadata: ${error.message}`);
-            throw new Error('Failed to fetch files metadata');
+            throw new Error("Failed to fetch files metadata");
         }
     }
     async downloadFileAsBuffer(fileId) {
         try {
             const file = await this.drive.files.get({
                 fileId,
-                fields: 'name',
+                fields: "name",
             });
             const response = await this.drive.files.get({
                 fileId,
-                alt: 'media',
-            }, { responseType: 'arraybuffer' });
+                alt: "media",
+            }, { responseType: "arraybuffer" });
             return {
                 buffer: Buffer.from(response.data),
                 filename: file.data.name || `file-${fileId}`,

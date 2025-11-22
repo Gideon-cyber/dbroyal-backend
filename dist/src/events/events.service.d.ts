@@ -22,9 +22,9 @@ export declare class EventsService {
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         slug: string;
         category: import(".prisma/client").$Enums.EventCategory;
-        description: string | null;
         date: Date | null;
         location: string | null;
         coverImageUrl: string | null;
@@ -49,9 +49,9 @@ export declare class EventsService {
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         slug: string;
         category: import(".prisma/client").$Enums.EventCategory;
-        description: string | null;
         date: Date | null;
         location: string | null;
         coverImageUrl: string | null;
@@ -59,7 +59,7 @@ export declare class EventsService {
         driveFolderId: string | null;
         clientId: string | null;
     })[]>;
-    findOne(id: string): import(".prisma/client").Prisma.Prisma__EventClient<{
+    findOne(id: string, country?: Country): import(".prisma/client").Prisma.Prisma__EventClient<{
         photos: {
             id: string;
             createdAt: Date;
@@ -76,9 +76,9 @@ export declare class EventsService {
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         slug: string;
         category: import(".prisma/client").$Enums.EventCategory;
-        description: string | null;
         date: Date | null;
         location: string | null;
         coverImageUrl: string | null;
@@ -86,44 +86,44 @@ export declare class EventsService {
         driveFolderId: string | null;
         clientId: string | null;
     }, null, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    update(id: string, data: any): import(".prisma/client").Prisma.Prisma__EventClient<{
+    update(id: string, data: any, country?: Country): Promise<{
         id: string;
         name: string;
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         slug: string;
         category: import(".prisma/client").$Enums.EventCategory;
-        description: string | null;
         date: Date | null;
         location: string | null;
         coverImageUrl: string | null;
         googleDriveUrl: string | null;
         driveFolderId: string | null;
         clientId: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
-    remove(id: string): import(".prisma/client").Prisma.Prisma__EventClient<{
+    }>;
+    remove(id: string, country?: Country): Promise<{
         id: string;
         name: string;
         country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         slug: string;
         category: import(".prisma/client").$Enums.EventCategory;
-        description: string | null;
         date: Date | null;
         location: string | null;
         coverImageUrl: string | null;
         googleDriveUrl: string | null;
         driveFolderId: string | null;
         clientId: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
+    }>;
     addPhotos(eventId: string, photos: {
         url: string;
         caption?: string;
         uploadedById?: string;
-    }[]): import(".prisma/client").Prisma.PrismaPromise<import(".prisma/client").Prisma.BatchPayload>;
-    listPhotos(eventId: string): import(".prisma/client").Prisma.PrismaPromise<{
+    }[], country?: Country): Promise<import(".prisma/client").Prisma.BatchPayload>;
+    listPhotos(eventId: string, country?: Country): Promise<{
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.UploadStatus;
@@ -133,7 +133,7 @@ export declare class EventsService {
         caption: string | null;
         uploadedById: string | null;
     }[]>;
-    syncPhotosFromGoogleDrive(eventId: string): Promise<{
+    syncPhotosFromGoogleDrive(eventId: string, country?: Country): Promise<{
         synced: number;
         photos: {
             id: string;
@@ -143,8 +143,8 @@ export declare class EventsService {
             downloadLink: string;
         }[];
     }>;
-    createShareableLink(photoIds: string[]): Promise<string>;
-    getGoogleDriveImages(eventId: string): Promise<{
+    createShareableLink(photoIds: string[], country?: Country): Promise<string>;
+    getGoogleDriveImages(eventId: string, country?: Country): Promise<{
         eventId: string;
         eventName: string;
         googleDriveUrl: string;
@@ -157,12 +157,12 @@ export declare class EventsService {
             downloadLink: string;
         }[];
     }>;
-    createDownloadSelection(eventId: string, driveFileIds: string[], expirationHours?: number): Promise<{
+    createDownloadSelection(eventId: string, driveFileIds: string[], expirationHours?: number, country?: Country): Promise<{
         token: string;
         shareLink: string;
         expiresAt: Date;
     }>;
-    getDownloadSelection(token: string): Promise<{
+    getDownloadSelection(token: string, country?: Country): Promise<{
         event: {
             id: string;
             name: string;
@@ -175,7 +175,7 @@ export declare class EventsService {
         createdAt: Date;
         expiresAt: Date;
     }>;
-    createDownloadSelectionFromPhotos(eventId: string, photoIds: string[], expirationHours?: number): Promise<{
+    createDownloadSelectionFromPhotos(eventId: string, photoIds: string[], expirationHours?: number, country?: Country): Promise<{
         token: string;
         shareLink: string;
         expiresAt: Date;
