@@ -45,4 +45,12 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], CreateDownloadSelectionDto.prototype, "expirationHours", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: "Description of deliverables (e.g., 'Digital Downloads', 'Printed Photos')",
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateDownloadSelectionDto.prototype, "deliverables", void 0);
 //# sourceMappingURL=create-download-selection.dto.js.map

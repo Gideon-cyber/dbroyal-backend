@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   BadRequestException,
 } from '@nestjs/common';
-import { Country } from '../enums/country.enum';
+import { Country } from '@prisma/client';
 
 @Injectable()
 export class CountryGuard implements CanActivate {
@@ -37,7 +37,7 @@ export class CountryGuard implements CanActivate {
     }
     
     // Attach country to request (default to Nigeria if not specified)
-    request.country = (country as Country) || Country.NIGERIA;
+    request.country = (country as Country) || Country.NG;
     
     return true;
   }

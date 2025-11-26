@@ -6,24 +6,27 @@ import {
   IsDateString,
   IsUUID,
 } from "class-validator";
-import { EventCategory, Country } from "@prisma/client";
+import { Country } from "@prisma/client";
 
 export class CreateEventDto {
   @ApiProperty({ description: "Event name" })
   @IsString()
   name: string;
 
-  @ApiProperty({ description: "URL-friendly slug for the event" })
+  @ApiPropertyOptional({
+    description:
+      "URL-friendly slug for the event (auto-generated from name if not provided)",
+  })
+  @IsOptional()
   @IsString()
-  slug: string;
+  slug?: string;
 
   @ApiProperty({
-    description: "Event category",
-    enum: EventCategory,
-    enumName: "EventCategory",
+    description: "Service ID for the event",
+    example: "clx1234567890abcdefghijk",
   })
-  @IsEnum(EventCategory)
-  category: EventCategory;
+  @IsString()
+  serviceId: string;
 
   @ApiPropertyOptional({ description: "Event description" })
   @IsOptional()

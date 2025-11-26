@@ -35,4 +35,12 @@ export class CreateDownloadSelectionDto {
   @IsNumber()
   @Min(1)
   expirationHours?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Description of deliverables (e.g., 'Digital Downloads', 'Printed Photos')",
+  })
+  @IsOptional()
+  @IsString()
+  deliverables?: string;
 }

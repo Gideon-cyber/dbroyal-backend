@@ -10,6 +10,8 @@ import { PhotosModule } from "./photos/photos.module";
 import { BookingsModule } from "./bookings/bookings.module";
 import { AuthModule } from "./auth/auth.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { ServicesModule } from "./services/services.module";
+import { SchedulerModule } from "./scheduler/scheduler.module";
 import { CountryGuard } from "./common/guards/country.guard";
 import { CountryContextInterceptor } from "./common/interceptors/country-context.interceptor";
 
@@ -23,6 +25,8 @@ import { CountryContextInterceptor } from "./common/interceptors/country-context
     BookingsModule,
     AuthModule,
     DashboardModule,
+    ServicesModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [

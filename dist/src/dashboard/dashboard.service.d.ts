@@ -24,31 +24,35 @@ export declare class DashboardService {
         };
     }>;
     getRecentBookings(country?: Country, limit?: number): Promise<({
-        event: {
-            country: import(".prisma/client").$Enums.Country;
-            description: string | null;
-            id: string;
-            clientId: string | null;
-            location: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            slug: string;
-            category: import(".prisma/client").$Enums.EventCategory;
-            date: Date | null;
-            coverImageUrl: string | null;
-            googleDriveUrl: string | null;
-            driveFolderId: string | null;
-        };
         client: {
-            country: import(".prisma/client").$Enums.Country;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             email: string | null;
             name: string;
             phone: string | null;
+            country: import(".prisma/client").$Enums.Country;
+            createdAt: Date;
+            updatedAt: Date;
             avatarUrl: string | null;
+        };
+        event: {
+            id: string;
+            name: string;
+            country: import(".prisma/client").$Enums.Country;
+            createdAt: Date;
+            updatedAt: Date;
+            slug: string;
+            description: string | null;
+            serviceId: string;
+            date: Date | null;
+            location: string | null;
+            coverImageUrl: string | null;
+            googleDriveUrl: string | null;
+            driveFolderId: string | null;
+            syncStatus: import(".prisma/client").$Enums.SyncStatus;
+            lastSyncedAt: Date | null;
+            syncErrorMessage: string | null;
+            driveChangeToken: string | null;
+            clientId: string | null;
         };
         assigned: ({
             user: {
@@ -63,17 +67,21 @@ export declare class DashboardService {
             assignedAt: Date;
         })[];
     } & {
-        country: import(".prisma/client").$Enums.Country;
         id: string;
-        title: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
-        location: string | null;
-        approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
+        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
+        title: string | null;
+        packageId: string;
+        price: import("@prisma/client/runtime/library").Decimal | null;
+        currency: string | null;
+        status: import(".prisma/client").$Enums.BookingStatus;
+        location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
+        notes: string | null;
+        approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
     })[]>;
     getBookingsByStatus(country?: Country): Promise<{
         scheduled: number;
@@ -84,7 +92,8 @@ export declare class DashboardService {
     getPendingApprovals(country?: Country, limit?: number, startDate?: string, endDate?: string): Promise<{
         id: string;
         title: string;
-        category: import(".prisma/client").$Enums.EventCategory;
+        service: string;
+        serviceSlug: string;
         clientName: string;
         location: string;
         dateTime: Date;
@@ -95,7 +104,7 @@ export declare class DashboardService {
         totalUploadsToday: number;
         uploads: {
             id: string;
-            service: import(".prisma/client").$Enums.EventCategory;
+            service: string;
             eventName: string;
             clientName: string;
             uploadedBy: string;
@@ -109,10 +118,11 @@ export declare class DashboardService {
     getUpcomingBookings(country?: Country, limit?: number): Promise<{
         id: string;
         title: string;
-        category: import(".prisma/client").$Enums.EventCategory;
+        service: string;
+        serviceSlug: string;
         clientName: string;
-        location: string;
         dateTime: Date;
+        location: string;
         assignedTo: string[];
         status: import(".prisma/client").$Enums.BookingStatus;
     }[]>;

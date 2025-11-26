@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Country } from '../enums/country.enum';
+import { Country } from '@prisma/client';
 
 @Injectable()
 export class CountryContextInterceptor implements NestInterceptor {

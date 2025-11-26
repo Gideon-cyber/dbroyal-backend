@@ -17,15 +17,6 @@ enum Role {
   ASSISTANT
 }
 
-enum EventCategory {
-  WEDDING
-  CORPORATE
-  PHOTOSHOOT
-  BIRTHDAY
-  BURIAL
-  OTHER
-}
-
 enum UploadStatus {
   PENDING
   COMPLETE
@@ -47,6 +38,90 @@ enum ApprovalStatus {
 enum Country {
   NG // Nigeria
   UK // United Kingdom
+}
+
+enum DeliveryStatus {
+  PENDING_PAYMENT
+  PENDING_APPROVAL
+  PROCESSING_DELIVERY
+  SHIPPED
+  REJECTED
+}
+
+enum SyncStatus {
+  NEVER_SYNCED
+  SYNCING
+  UP_TO_DATE
+  ERROR
+  SYNC_REQUIRED
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  subtitle    String?  // e.g., "Turning every corporate moment into a timeless impression"
+  imageUrl    String?
+  isVisible   Boolean  @default(true)
+  country     Country  @default(NG)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events      Event[]
+  packages    Package[]
+
+  @@index([country])
+  @@index([isVisible])
+  @@index([slug])
+}
+
+model Package {
+  id            String   @id @default(cuid())
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name          String   // e.g., "Essential Package", "Basic Package", "Standard Package"
+  slug          String
+  description   String?
+  isVisible     Boolean  @default(true)
+  sortOrder     Int      @default(0) // For ordering packages within a service
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  features      PackageFeature[]
+  pricing       PackagePricing[]
+  bookings      Booking[]
+
+  @@unique([serviceId, slug])
+  @@index([serviceId])
+  @@index([isVisible])
+}
+
+model PackageFeature {
+  id          String   @id @default(cuid())
+  packageId   String
+  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  feature     String   // e.g., "3-hours coverage", "50 edited photos"
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([packageId])
+}
+
+model PackagePricing {
+  id          String   @id @default(cuid())
+  packageId   String
+  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  country     Country
+  price       Decimal  @db.Decimal(10, 2) // Price in local currency
+  currency    String   // e.g., "USD", "NGN"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([packageId, country])
+  @@index([packageId])
+  @@index([country])
 }
 
 model User {
@@ -84,19 +159,27 @@ model Client {
 }
 
 model Event {
-  id              String         @id @default(cuid())
-  name            String
-  slug            String         @unique
-  category        EventCategory
-  description     String?
-  date            DateTime?
-  location        String?
-  coverImageUrl   String?
-  googleDriveUrl  String?
-  driveFolderId   String?        // Store extracted folder ID for easier access
-  country         Country        @default(NG)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  name             String
+  slug             String         @unique
+  serviceId        String
+  service          Service        @relation(fields: [serviceId], references: [id])
+  description      String?
+  date             DateTime?
+  location         String?
+  coverImageUrl    String?
+  googleDriveUrl   String?
+  driveFolderId    String?        // Store extracted folder ID for easier access
+  country          Country        @default(NG)
+  
+  // Sync tracking fields
+  syncStatus       SyncStatus     @default(NEVER_SYNCED)
+  lastSyncedAt     DateTime?
+  syncErrorMessage String?
+  driveChangeToken String?        // Token for incremental Drive sync
+  
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   clientId String?
   client   Client?        @relation(fields: [clientId], references: [id])
@@ -105,22 +188,33 @@ model Event {
   bookings           Booking[]
   downloadSelections DownloadSelection[]
 
-  @@index([category])
+  @@index([serviceId])
   @@index([date])
   @@index([country])
+  @@index([syncStatus])
+  @@index([lastSyncedAt])
 }
 
 model Photo {
-  id            String        @id @default(cuid())
-  eventId       String
-  event         Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  url           String
-  driveFileId   String?       // Store Google Drive file ID for direct access
-  caption       String?
-  status        UploadStatus  @default(PENDING)
+  id              String        @id @default(cuid())
+  eventId         String
+  event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  url             String        // Backend proxy URL for serving images
+  googleDriveUrl  String?       // Direct Google Drive public URL
+  driveFileId     String?       // Store Google Drive file ID for direct access
+  caption         String?
+  status          UploadStatus  @default(PENDING)
+  
+  // Photo metadata
+  mimeType      String?       // e.g., image/jpeg, image/png
+  fileSize      BigInt?       // File size in bytes
+  width         Int?          // Image width in pixels
+  height        Int?          // Image height in pixels
+  
   uploadedById  String?
   uploadedBy    User?         @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([eventId])
   @@index([driveFileId])
@@ -128,27 +222,42 @@ model Photo {
 }
 
 model DownloadSelection {
-  id         String   @id @default(cuid())
-  eventId    String
-  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  photoIds   String   // JSON array of photo IDs or drive file IDs
-  token      String   @unique
-  expiresAt  DateTime? // Optional expiration
-  createdAt  DateTime @default(now())
+  id               String          @id @default(cuid())
+  eventId          String
+  event            Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photoIds         String          // JSON array of photo IDs or drive file IDs
+  token            String          @unique
+  expiresAt        DateTime?       // Optional expiration
+  deliveryStatus   DeliveryStatus  @default(PENDING_PAYMENT)
+  deliverables     String?         // Description of what will be delivered (e.g., "Digital Downloads")
+  photoCount       Int?            // Number of photos in selection
+  rejectionReason  String?         // Reason for rejection if status is REJECTED
+  approvedAt       DateTime?       // When the request was approved
+  approvedBy       String?         // User ID who approved
+  completedAt      DateTime?       // When delivery was completed (SHIPPED)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([token])
   @@index([eventId])
+  @@index([deliveryStatus])
+  @@index([createdAt])
 }
 
 model Booking {
   id             String          @id @default(cuid())
   title          String?
+  packageId      String
+  package        Package         @relation(fields: [packageId], references: [id])
   eventId        String?
   event          Event?          @relation(fields: [eventId], references: [id])
   clientId       String
   client         Client          @relation(fields: [clientId], references: [id])
   dateTime       DateTime
   location       String?
+  notes          String?         // Additional booking notes or requirements
+  price          Decimal?        @db.Decimal(10, 2) // Booked price (captured at booking time)
+  currency       String?         // Currency at booking time
   approvalStatus ApprovalStatus  @default(PENDING)
   status         BookingStatus   @default(SCHEDULED)
   country        Country         @default(NG)
@@ -158,6 +267,7 @@ model Booking {
   assigned BookingAssignment[]
 
   @@index([clientId])
+  @@index([packageId])
   @@index([eventId])
   @@index([dateTime])
   @@index([country])

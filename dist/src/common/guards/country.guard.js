@@ -8,7 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CountryGuard = void 0;
 const common_1 = require("@nestjs/common");
-const country_enum_1 = require("../enums/country.enum");
+const client_1 = require("@prisma/client");
 let CountryGuard = class CountryGuard {
     canActivate(context) {
         const request = context.switchToHttp().getRequest();
@@ -25,10 +25,10 @@ let CountryGuard = class CountryGuard {
         if (!country && request.query?.country) {
             country = request.query.country.toUpperCase();
         }
-        if (country && !Object.values(country_enum_1.Country).includes(country)) {
-            throw new common_1.BadRequestException(`Invalid country code. Supported countries: ${Object.values(country_enum_1.Country).join(', ')}`);
+        if (country && !Object.values(client_1.Country).includes(country)) {
+            throw new common_1.BadRequestException(`Invalid country code. Supported countries: ${Object.values(client_1.Country).join(', ')}`);
         }
-        request.country = country || country_enum_1.Country.NIGERIA;
+        request.country = country || client_1.Country.NG;
         return true;
     }
 };

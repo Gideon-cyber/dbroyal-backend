@@ -23,6 +23,11 @@ __decorate([
     __metadata("design:type", String)
 ], CreateBookingDto.prototype, "title", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: "Package ID" }),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateBookingDto.prototype, "packageId", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: "Related event ID" }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUUID)(),
@@ -48,6 +53,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateBookingDto.prototype, "location", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: "Additional notes or requirements" }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateBookingDto.prototype, "notes", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: "Approval status",

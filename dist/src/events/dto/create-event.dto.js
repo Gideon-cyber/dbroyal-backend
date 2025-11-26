@@ -22,19 +22,21 @@ __decorate([
     __metadata("design:type", String)
 ], CreateEventDto.prototype, "name", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: "URL-friendly slug for the event" }),
+    (0, swagger_1.ApiPropertyOptional)({
+        description: "URL-friendly slug for the event (auto-generated from name if not provided)",
+    }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateEventDto.prototype, "slug", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: "Event category",
-        enum: client_1.EventCategory,
-        enumName: "EventCategory",
+        description: "Service ID for the event",
+        example: "clx1234567890abcdefghijk",
     }),
-    (0, class_validator_1.IsEnum)(client_1.EventCategory),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateEventDto.prototype, "category", void 0);
+], CreateEventDto.prototype, "serviceId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: "Event description" }),
     (0, class_validator_1.IsOptional)(),

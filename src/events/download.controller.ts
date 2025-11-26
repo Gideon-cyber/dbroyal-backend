@@ -1,5 +1,22 @@
-import { Controller, Get, Param, Res } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from "@nestjs/swagger";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Res,
+  Query,
+  Patch,
+  Body,
+  Post,
+} from "@nestjs/common";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiQuery,
+} from "@nestjs/swagger";
 import { Response } from "express";
 import { EventsService } from "./events.service";
 import { GoogleDriveService } from "../google-drive/google-drive.service";
@@ -7,6 +24,7 @@ import archiver from "archiver";
 import { Country } from "@prisma/client";
 import { GetCountry } from "../common/decorators/country.decorator";
 import { ApiCountryHeader } from "../common/decorators/api-country-header.decorator";
+import { UpdateDownloadStatusDto, ListDownloadRequestsDto } from "./dto";
 
 @ApiTags("download")
 @ApiCountryHeader()
@@ -28,7 +46,10 @@ export class DownloadController {
     status: 404,
     description: "Download selection not found or expired",
   })
-  async getDownloadSelection(@GetCountry() country: Country, @Param("token") token: string) {
+  async getDownloadSelection(
+    @GetCountry() country: Country,
+    @Param("token") token: string
+  ) {
     return this.eventsService.getDownloadSelection(token, country);
   }
 
@@ -43,8 +64,15 @@ export class DownloadController {
     status: 404,
     description: "Download selection not found or expired",
   })
-  async downloadAsZip(@GetCountry() country: Country, @Param("token") token: string, @Res() res: Response) {
-    const selection = await this.eventsService.getDownloadSelection(token, country);
+  async downloadAsZip(
+    @GetCountry() country: Country,
+    @Param("token") token: string,
+    @Res() res: Response
+  ) {
+    const selection = await this.eventsService.getDownloadSelection(
+      token,
+      country
+    );
 
     // Set response headers for ZIP download
     res.setHeader("Content-Type", "application/zip");
@@ -75,5 +103,126 @@ export class DownloadController {
 
     // Finalize the archive
     await archive.finalize();
+  }
+
+  @Get("requests/list")
+  @ApiOperation({ summary: "List all download requests with filters" })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    enum: [
+      "PENDING_PAYMENT",
+      "PENDING_APPROVAL",
+      "PROCESSING_DELIVERY",
+      "SHIPPED",
+      "REJECTED",
+    ],
+  })
+  @ApiQuery({ name: "eventId", required: false })
+  @ApiQuery({ name: "startDate", required: false })
+  @ApiQuery({ name: "endDate", required: false })
+  @ApiResponse({
+    status: 200,
+    description: "Returns list of download requests",
+  })
+  async listDownloadRequests(
+    @GetCountry() country: Country,
+    @Query() filters: ListDownloadRequestsDto
+  ) {
+    return this.eventsService.listDownloadRequests({ ...filters, country });
+  }
+
+  @Get("requests/stats")
+  @ApiOperation({ summary: "Get download request statistics" })
+  @ApiResponse({
+    status: 200,
+    description: "Returns statistics about download requests",
+  })
+  async getDownloadRequestStats(@GetCountry() country: Country) {
+    return this.eventsService.getDownloadRequestStats(country);
+  }
+
+  @Patch("requests/:id/status")
+  @ApiOperation({ summary: "Update download request status" })
+  @ApiParam({ name: "id", description: "Download request ID" })
+  @ApiBody({ type: UpdateDownloadStatusDto })
+  @ApiResponse({
+    status: 200,
+    description: "Download request status updated successfully",
+  })
+  @ApiResponse({ status: 404, description: "Download request not found" })
+  async updateDownloadStatus(
+    @GetCountry() country: Country,
+    @Param("id") id: string,
+    @Body() updateDto: UpdateDownloadStatusDto
+  ) {
+    return this.eventsService.updateDownloadStatus(id, updateDto.status, {
+      rejectionReason: updateDto.rejectionReason,
+      approvedBy: updateDto.approvedBy,
+      country,
+    });
+  }
+
+  @Post("requests/:id/approve")
+  @ApiOperation({ summary: "Approve a download request" })
+  @ApiParam({ name: "id", description: "Download request ID" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        approvedBy: { type: "string", description: "User ID who approved" },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Download request approved successfully",
+  })
+  @ApiResponse({ status: 404, description: "Download request not found" })
+  async approveDownloadRequest(
+    @GetCountry() country: Country,
+    @Param("id") id: string,
+    @Body("approvedBy") approvedBy?: string
+  ) {
+    return this.eventsService.approveDownloadRequest(id, approvedBy, country);
+  }
+
+  @Post("requests/:id/reject")
+  @ApiOperation({ summary: "Reject a download request" })
+  @ApiParam({ name: "id", description: "Download request ID" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        rejectionReason: {
+          type: "string",
+          description: "Reason for rejection",
+        },
+      },
+      required: ["rejectionReason"],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Download request rejected successfully",
+  })
+  @ApiResponse({ status: 404, description: "Download request not found" })
+  @ApiResponse({
+    status: 400,
+    description: "Rejection reason is required",
+  })
+  async rejectDownloadRequest(
+    @GetCountry() country: Country,
+    @Param("id") id: string,
+    @Body("rejectionReason") rejectionReason: string
+  ) {
+    if (!rejectionReason) {
+      throw new BadRequestException("Rejection reason is required");
+    }
+    return this.eventsService.rejectDownloadRequest(
+      id,
+      rejectionReason,
+      country
+    );
   }
 }

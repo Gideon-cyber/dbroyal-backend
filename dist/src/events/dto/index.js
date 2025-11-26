@@ -19,4 +19,6 @@ __exportStar(require("./update-event.dto"), exports);
 __exportStar(require("./add-photos.dto"), exports);
 __exportStar(require("./create-shareable-link.dto"), exports);
 __exportStar(require("./create-download-selection.dto"), exports);
+__exportStar(require("./update-download-status.dto"), exports);
+__exportStar(require("./list-download-requests.dto"), exports);
 //# sourceMappingURL=index.js.map

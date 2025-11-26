@@ -17,6 +17,11 @@ let PrismaExceptionFilter = PrismaExceptionFilter_1 = class PrismaExceptionFilte
     catch(exception, host) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse();
+        const isPrismaError = exception instanceof client_1.Prisma.PrismaClientKnownRequestError ||
+            exception instanceof client_1.Prisma.PrismaClientValidationError;
+        if (!isPrismaError) {
+            throw exception;
+        }
         this.logger.error('Prisma Error:', exception);
         if (exception instanceof client_1.Prisma.PrismaClientKnownRequestError) {
             return this.handleKnownRequestError(exception, response);
@@ -89,6 +94,6 @@ let PrismaExceptionFilter = PrismaExceptionFilter_1 = class PrismaExceptionFilte
 };
 exports.PrismaExceptionFilter = PrismaExceptionFilter;
 exports.PrismaExceptionFilter = PrismaExceptionFilter = PrismaExceptionFilter_1 = __decorate([
-    (0, common_1.Catch)(client_1.Prisma.PrismaClientKnownRequestError, client_1.Prisma.PrismaClientValidationError)
+    (0, common_1.Catch)()
 ], PrismaExceptionFilter);
 //# sourceMappingURL=prisma-exception.filter.js.map

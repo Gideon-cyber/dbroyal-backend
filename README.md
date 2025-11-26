@@ -8,6 +8,8 @@ Building a fully functional and scalable backend system with Nest.js for photogr
 
 - **Connect Google Drive folders to events** - Admins can add Google Drive URLs to events
 - **Display images from Google Drive** - Automatically fetch and display images from linked folders
+- **Dual URL Strategy** - Each photo has both a direct Google Drive URL and a backend proxy URL for maximum reliability
+- **Image Optimization** - Backend proxy supports automatic resizing and compression
 - **Token-based photo selection** - Secure, shareable links with optional expiration
 - **ZIP downloads** - Download multiple selected photos as a single ZIP file
 - **Automatic cleanup** - Expired selections are automatically removed
@@ -24,11 +26,13 @@ The API implements country-based access control to support multi-region operatio
 The system detects the country from (in order of priority):
 
 1. **X-Country Header**
+
    ```bash
    curl -H "X-Country: NG" http://localhost:3000/events
    ```
 
 2. **Subdomain**
+
    ```bash
    # Automatically detects NG
    curl http://ng.yourdomain.com/events
@@ -38,6 +42,7 @@ The system detects the country from (in order of priority):
    ```
 
 3. **Query Parameter**
+
    ```bash
    curl http://localhost:3000/events?country=UK
    ```
@@ -47,12 +52,14 @@ The system detects the country from (in order of priority):
 #### Country Scoping
 
 **Country-Scoped Resources:**
+
 - **Events** - Filtered by requesting country, includes all operations (photos, sync, downloads)
 - **Bookings** - Filtered by requesting country, includes assignments
 - **Clients** - Filtered by requesting country
 - **Download Links** - Region-locked to the country where they were created
 
 **Global Resources:**
+
 - **Users** - Accessible from all countries (staff can work across regions)
 
 #### Security
@@ -134,13 +141,27 @@ The API will be available at `http://localhost:3000`
 
 ## 📚 Documentation
 
+### Quick Start
+
 - **[Setup Enhanced Features](./docs/SETUP_ENHANCED_FEATURES.md)** - Quick setup for new features (3 steps)
-- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Overview of what was implemented
-- **[Enhanced Features Guide](./docs/GOOGLE_DRIVE_ENHANCED_FEATURES.md)** - Detailed feature documentation
 - **[Google Drive Quick Start](./docs/GOOGLE_DRIVE_QUICK_START.md)** - 5-minute setup guide
+
+### Photo Management
+
+- **[Photo URL Strategy](./docs/PHOTO_URL_STRATEGY.md)** - 🆕 Guide to using dual URLs (Google Drive + Proxy)
+- **[Dual URL Implementation](./docs/DUAL_URL_IMPLEMENTATION.md)** - 🆕 Quick reference for frontend integration
+- **[Image Optimization](./docs/IMAGE_OPTIMIZATION.md)** - Backend image resizing and compression
+
+### Google Drive Integration
+
 - **[Google Drive Setup Guide](./docs/GOOGLE_DRIVE_SETUP.md)** - Detailed Google Drive configuration
 - **[Get Google Credentials](./docs/HOW_TO_GET_GOOGLE_CREDENTIALS.md)** - Step-by-step credential setup
 - **[Google Drive API Documentation](./docs/GOOGLE_DRIVE_API.md)** - Complete API reference
+- **[Enhanced Features Guide](./docs/GOOGLE_DRIVE_ENHANCED_FEATURES.md)** - Detailed feature documentation
+
+### Architecture
+
+- **[Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)** - Overview of what was implemented
 - **[Country Filtering Guide](./docs/COUNTRY_FILTERING.md)** - Country-based multi-tenancy documentation
 - **[Country Routing](./docs/COUNTRY_ROUTING.md)** - Multi-country support documentation
 

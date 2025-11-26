@@ -19,6 +19,8 @@ const photos_module_1 = require("./photos/photos.module");
 const bookings_module_1 = require("./bookings/bookings.module");
 const auth_module_1 = require("./auth/auth.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
+const services_module_1 = require("./services/services.module");
+const scheduler_module_1 = require("./scheduler/scheduler.module");
 const country_guard_1 = require("./common/guards/country.guard");
 const country_context_interceptor_1 = require("./common/interceptors/country-context.interceptor");
 let AppModule = class AppModule {
@@ -35,6 +37,8 @@ exports.AppModule = AppModule = __decorate([
             bookings_module_1.BookingsModule,
             auth_module_1.AuthModule,
             dashboard_module_1.DashboardModule,
+            services_module_1.ServicesModule,
+            scheduler_module_1.SchedulerModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

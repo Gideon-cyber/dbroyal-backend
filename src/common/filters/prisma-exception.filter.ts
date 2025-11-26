@@ -8,16 +8,25 @@ import {
 import { Prisma } from '@prisma/client';
 import { Response } from 'express';
 
-@Catch(Prisma.PrismaClientKnownRequestError, Prisma.PrismaClientValidationError)
+@Catch()
 export class PrismaExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(PrismaExceptionFilter.name);
 
   catch(
-    exception: Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientValidationError,
+    exception: any,
     host: ArgumentsHost,
   ) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+
+    // Only handle Prisma errors
+    const isPrismaError = exception instanceof Prisma.PrismaClientKnownRequestError ||
+                          exception instanceof Prisma.PrismaClientValidationError;
+
+    if (!isPrismaError) {
+      // Re-throw non-Prisma errors to be handled by other filters
+      throw exception;
+    }
 
     this.logger.error('Prisma Error:', exception);
 

@@ -15,6 +15,10 @@ export class CreateBookingDto {
   @IsString()
   title?: string;
 
+  @ApiProperty({ description: "Package ID" })
+  @IsUUID()
+  packageId: string;
+
   @ApiPropertyOptional({ description: "Related event ID" })
   @IsOptional()
   @IsUUID()
@@ -36,6 +40,11 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @ApiPropertyOptional({ description: "Additional notes or requirements" })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @ApiPropertyOptional({
     description: "Approval status",

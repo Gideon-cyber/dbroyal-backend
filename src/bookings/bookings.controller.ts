@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from "@nestjs/swagger";
 import { BookingsService } from "./bookings.service";
@@ -31,8 +32,23 @@ export class BookingsController {
   @Get()
   @ApiOperation({ summary: "Get all bookings" })
   @ApiResponse({ status: 200, description: "Returns all bookings" })
-  findAll(@GetCountry() country: Country) {
-    return this.bookingsService.findAll(country);
+  findAll(
+    @GetCountry() country: Country,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string
+  ) {
+    return this.bookingsService.findAll(country, startDate, endDate);
+  }
+
+  @Get("metrics")
+  @ApiOperation({ summary: "Get booking dashboard metrics" })
+  @ApiResponse({
+    status: 200,
+    description:
+      "Returns booking metrics including pending, approved, and rejected counts",
+  })
+  getMetrics(@GetCountry() country: Country) {
+    return this.bookingsService.getBookingMetrics(country);
   }
 
   @Get(":id")
@@ -49,7 +65,11 @@ export class BookingsController {
   @ApiParam({ name: "id", description: "Booking ID" })
   @ApiResponse({ status: 200, description: "Booking updated successfully" })
   @ApiResponse({ status: 404, description: "Booking not found" })
-  update(@GetCountry() country: Country, @Param("id") id: string, @Body() body: UpdateBookingDto) {
+  update(
+    @GetCountry() country: Country,
+    @Param("id") id: string,
+    @Body() body: UpdateBookingDto
+  ) {
     return this.bookingsService.update(id, body, country);
   }
 
@@ -67,7 +87,11 @@ export class BookingsController {
   @ApiParam({ name: "id", description: "Booking ID" })
   @ApiResponse({ status: 200, description: "Users assigned successfully" })
   @ApiResponse({ status: 404, description: "Booking not found" })
-  assign(@GetCountry() country: Country, @Param("id") id: string, @Body() body: AssignUsersDto) {
+  assign(
+    @GetCountry() country: Country,
+    @Param("id") id: string,
+    @Body() body: AssignUsersDto
+  ) {
     return this.bookingsService.assignUsers(id, body.userIds || [], country);
   }
 }

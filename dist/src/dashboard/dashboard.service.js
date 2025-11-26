@@ -192,7 +192,13 @@ let DashboardService = class DashboardService {
                     select: {
                         id: true,
                         name: true,
-                        category: true,
+                        service: {
+                            select: {
+                                id: true,
+                                title: true,
+                                slug: true,
+                            },
+                        },
                     },
                 },
             },
@@ -202,7 +208,8 @@ let DashboardService = class DashboardService {
         return bookings.map((booking) => ({
             id: booking.id,
             title: booking.title || booking.event?.name,
-            category: booking.event?.category || "WEDDING",
+            service: booking.event?.service?.title || "Other Services",
+            serviceSlug: booking.event?.service?.slug || "other-services",
             clientName: booking.client.name,
             location: booking.location,
             dateTime: booking.dateTime,
@@ -236,6 +243,13 @@ let DashboardService = class DashboardService {
                         name: true,
                     },
                 },
+                service: {
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                    },
+                },
             },
             orderBy: {
                 updatedAt: "desc",
@@ -258,7 +272,7 @@ let DashboardService = class DashboardService {
             const pendingPhotos = totalPhotos - completedPhotos;
             return {
                 id: event.id,
-                service: event.category,
+                service: event.service?.title || "Other Services",
                 eventName: event.name,
                 clientName: event.client?.name || "Unknown",
                 uploadedBy: firstUploader,
@@ -297,7 +311,13 @@ let DashboardService = class DashboardService {
                     select: {
                         id: true,
                         name: true,
-                        category: true,
+                        service: {
+                            select: {
+                                id: true,
+                                title: true,
+                                slug: true,
+                            },
+                        },
                     },
                 },
                 assigned: {
@@ -318,10 +338,11 @@ let DashboardService = class DashboardService {
         return bookings.map((booking) => ({
             id: booking.id,
             title: booking.title || booking.event?.name,
-            category: booking.event?.category || "WEDDING",
+            service: booking.event?.service?.title || "Other Services",
+            serviceSlug: booking.event?.service?.slug || "other-services",
             clientName: booking.client.name,
-            location: booking.location,
             dateTime: booking.dateTime,
+            location: booking.location,
             assignedTo: booking.assigned.map((a) => a.user.name),
             status: booking.status,
         }));
