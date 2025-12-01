@@ -151,6 +151,18 @@ export class EventsController {
     );
   }
 
+  @Get("slug/:slug")
+  @ApiOperation({ summary: "Get event by slug" })
+  @ApiParam({
+    name: "slug",
+    description: "Event slug (URL-friendly identifier)",
+  })
+  @ApiResponse({ status: 200, description: "Returns the event" })
+  @ApiResponse({ status: 404, description: "Event not found" })
+  findBySlug(@GetCountry() country: Country, @Param("slug") slug: string) {
+    return this.eventsService.findBySlug(slug, country);
+  }
+
   @Get(":id")
   @ApiOperation({ summary: "Get event by ID" })
   @ApiParam({ name: "id", description: "Event ID" })
@@ -454,6 +466,46 @@ export class EventsController {
   })
   async getSyncStatistics(@GetCountry() country: Country) {
     return this.eventsService.getSyncStatistics(country);
+  }
+
+  @Post(":id/regenerate-cover")
+  @ApiOperation({
+    summary: "Regenerate cover image for an event",
+    description:
+      "Manually regenerate the cover image using the first photo from the event's photo collection. Returns both Google Drive direct URL and backend proxy URL.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Event ID",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cover image regenerated successfully",
+    schema: {
+      properties: {
+        eventId: { type: "string" },
+        generatedCoverImageUrl: {
+          type: "string",
+          description: "Google Drive direct URL",
+        },
+        generatedCoverImageProxyUrl: {
+          type: "string",
+          description: "Backend proxy URL",
+        },
+        message: { type: "string" },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: "Event not found" })
+  @ApiResponse({
+    status: 400,
+    description: "No photos available to generate cover image",
+  })
+  async regenerateCoverImage(
+    @GetCountry() country: Country,
+    @Param("id") id: string
+  ) {
+    return this.eventsService.regenerateCoverImage(id, country);
   }
 
   @Get("photos/proxy/:driveFileId")

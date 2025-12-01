@@ -72,7 +72,6 @@ async function seedServices() {
         "Capturing the magic of your special day with elegance and sophistication",
       description:
         "Capture your special day with beautiful timeless wedding photography. From intimate ceremonies to grand celebrations, we document every precious moment.",
-      country: Country.NG,
       packages: [
         {
           name: "Standard Package",
@@ -131,7 +130,6 @@ async function seedServices() {
       subtitle: "Turning every corporate moment into a timeless impression",
       description:
         "Professional event coverage for corporate functions, celebrations, and special occasions. Comprehensive documentation with artistic flair.",
-      country: Country.NG,
       packages: [
         {
           name: "Essential Package",
@@ -214,7 +212,6 @@ async function seedServices() {
         "Turning every birthday into a collection of unforgettable frames",
       description:
         "Capture your special day with beautiful timeless photography. From intimate ceremonies to grand celebrations, we document every precious moment.",
-      country: Country.NG,
       packages: [
         {
           name: "Basic Package",
@@ -271,7 +268,6 @@ async function seedServices() {
       subtitle: "Thoughtfully documenting moments of remembrance and love",
       description:
         "Respectful and dignified photography for burial and memorial events. We capture moments with sensitivity and professionalism.",
-      country: Country.NG,
       packages: [
         {
           name: "Basic Package",
@@ -330,7 +326,6 @@ async function seedServices() {
       subtitle: "Professional imagery that captures personality with precision",
       description:
         "Professional portrait sessions for individuals, families, and professionals looking for stunning headshots.",
-      country: Country.NG,
       packages: [
         {
           name: "Basic Package",
@@ -370,21 +365,21 @@ async function seedServices() {
   for (const serviceData of services) {
     const { packages, ...serviceInfo } = serviceData;
 
-    // Create NG version
-    const existingNG = await prisma.service.findUnique({
+    // Check if service already exists
+    const existingService = await prisma.service.findUnique({
       where: { slug: serviceInfo.slug },
     });
 
-    let ngService;
-    if (existingNG) {
+    let service;
+    if (existingService) {
       console.log(`  ✓ Service "${serviceInfo.title}" already exists`);
-      ngService = existingNG;
+      service = existingService;
     } else {
-      ngService = await prisma.service.create({ data: serviceInfo });
+      service = await prisma.service.create({ data: serviceInfo });
       console.log(`  ✓ Created service: ${serviceInfo.title}`);
     }
 
-    // Seed packages for NG
+    // Seed packages with pricing for all countries
     if (packages) {
       for (const packageData of packages) {
         const { features, pricing, ...pkgInfo } = packageData;
@@ -392,7 +387,7 @@ async function seedServices() {
         const existingPackage = await prisma.package.findUnique({
           where: {
             serviceId_slug: {
-              serviceId: ngService.id,
+              serviceId: service.id,
               slug: pkgInfo.slug,
             },
           },
@@ -406,7 +401,7 @@ async function seedServices() {
         await prisma.package.create({
           data: {
             ...pkgInfo,
-            serviceId: ngService.id,
+            serviceId: service.id,
             features: {
               create: features.map((feature, index) => ({
                 feature,
@@ -414,70 +409,11 @@ async function seedServices() {
               })),
             },
             pricing: {
-              create: pricing.filter((p) => p.country === Country.NG),
+              create: pricing, // Create pricing for all countries
             },
           },
         });
         console.log(`    ✓ Created package: ${pkgInfo.name}`);
-      }
-    }
-
-    // Create UK version
-    const ukSlug = `${serviceInfo.slug}-uk`;
-    const existingUK = await prisma.service.findUnique({
-      where: { slug: ukSlug },
-    });
-
-    let ukService;
-    if (existingUK) {
-      console.log(`  ✓ Service "${serviceInfo.title} (UK)" already exists`);
-      ukService = existingUK;
-    } else {
-      ukService = await prisma.service.create({
-        data: {
-          ...serviceInfo,
-          slug: ukSlug,
-          country: Country.UK,
-        },
-      });
-      console.log(`  ✓ Created service: ${serviceInfo.title} (UK)`);
-    }
-
-    // Seed packages for UK
-    if (packages) {
-      for (const packageData of packages) {
-        const { features, pricing, ...pkgInfo } = packageData;
-
-        const existingPackage = await prisma.package.findUnique({
-          where: {
-            serviceId_slug: {
-              serviceId: ukService.id,
-              slug: pkgInfo.slug,
-            },
-          },
-        });
-
-        if (existingPackage) {
-          console.log(`    ✓ Package "${pkgInfo.name}" (UK) already exists`);
-          continue;
-        }
-
-        await prisma.package.create({
-          data: {
-            ...pkgInfo,
-            serviceId: ukService.id,
-            features: {
-              create: features.map((feature, index) => ({
-                feature,
-                sortOrder: index,
-              })),
-            },
-            pricing: {
-              create: pricing.filter((p) => p.country === Country.UK),
-            },
-          },
-        });
-        console.log(`    ✓ Created package: ${pkgInfo.name} (UK)`);
       }
     }
   }

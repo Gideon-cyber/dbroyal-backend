@@ -45,9 +45,4 @@ export class CreateServiceDto {
   @IsBoolean()
   @IsOptional()
   isVisible?: boolean;
-
-  @ApiPropertyOptional({ enum: Country, description: "Country", default: "NG" })
-  @IsEnum(Country)
-  @IsOptional()
-  country?: Country;
 }

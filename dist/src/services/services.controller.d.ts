@@ -6,7 +6,6 @@ export declare class ServicesController {
     constructor(servicesService: ServicesService);
     create(createServiceDto: CreateServiceDto): Promise<{
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -48,7 +47,6 @@ export declare class ServicesController {
         })[];
     } & {
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -90,7 +88,6 @@ export declare class ServicesController {
         })[];
     } & {
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -102,7 +99,6 @@ export declare class ServicesController {
     }>;
     update(id: string, updateServiceDto: UpdateServiceDto): Promise<{
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -114,7 +110,6 @@ export declare class ServicesController {
     }>;
     remove(id: string): Promise<{
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -126,7 +121,6 @@ export declare class ServicesController {
     }>;
     toggleVisibility(id: string): Promise<{
         id: string;
-        country: import(".prisma/client").$Enums.Country;
         createdAt: Date;
         updatedAt: Date;
         title: string;
@@ -168,7 +162,6 @@ export declare class ServicesController {
     findPackage(packageId: string, country: Country): Promise<{
         service: {
             id: string;
-            country: import(".prisma/client").$Enums.Country;
             createdAt: Date;
             updatedAt: Date;
             title: string;

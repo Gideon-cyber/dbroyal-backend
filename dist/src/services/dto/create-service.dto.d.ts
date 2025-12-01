@@ -1,4 +1,3 @@
-import { Country } from "@prisma/client";
 export declare class CreateServiceDto {
     title: string;
     slug: string;
@@ -6,5 +5,4 @@ export declare class CreateServiceDto {
     subtitle?: string;
     imageUrl?: string;
     isVisible?: boolean;
-    country?: Country;
 }

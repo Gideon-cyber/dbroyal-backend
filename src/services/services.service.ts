@@ -16,10 +16,6 @@ export class ServicesService {
   async findAll(country?: Country, isVisible?: boolean) {
     const where: any = {};
 
-    if (country) {
-      where.country = country;
-    }
-
     if (isVisible !== undefined) {
       where.isVisible = isVisible;
     }

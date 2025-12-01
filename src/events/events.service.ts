@@ -175,6 +175,24 @@ export class EventsService {
     };
   }
 
+  async findBySlug(slug: string, country?: Country) {
+    const event = await this.prisma.event.findFirst({
+      where: country ? { slug, country } : { slug },
+      include: { photos: true, service: true },
+    });
+
+    if (!event) return null;
+
+    // Convert BigInt values to strings for JSON serialization
+    return {
+      ...event,
+      photos: event.photos.map((photo) => ({
+        ...photo,
+        fileSize: photo.fileSize ? photo.fileSize.toString() : null,
+      })),
+    };
+  }
+
   async update(id: string, data: any, country?: Country) {
     // Verify ownership before updating
     if (country) {
@@ -335,6 +353,9 @@ export class EventsService {
           },
         }),
       ]);
+
+      // Automatically generate cover image from first photo
+      await this.updateGeneratedCoverImage(eventId);
 
       return {
         synced: photos.length,
@@ -644,6 +665,9 @@ export class EventsService {
           }),
         ]);
 
+        // Automatically generate cover image from first photo
+        await this.updateGeneratedCoverImage(eventId);
+
         return {
           synced: photos.length,
           added: photos.length,
@@ -702,6 +726,11 @@ export class EventsService {
         );
 
         await this.prisma.$transaction(operations);
+
+        // Update generated cover image if photos were added
+        if (addedImages.length > 0) {
+          await this.updateGeneratedCoverImage(eventId);
+        }
 
         return {
           synced: addedImages.length + removedImages.length,
@@ -1196,5 +1225,63 @@ export class EventsService {
    */
   async streamPhotoFromDrive(driveFileId: string, size?: number) {
     return this.googleDriveService.streamFile(driveFileId, size);
+  }
+
+  /**
+   * Automatically update the generated cover image URL for an event
+   * Uses the first photo from the event's photo collection
+   */
+  async updateGeneratedCoverImage(eventId: string) {
+    // Get the first photo for this event
+    const firstPhoto = await this.prisma.photo.findFirst({
+      where: { eventId },
+      orderBy: { createdAt: "asc" },
+      select: {
+        googleDriveUrl: true,
+        url: true,
+      },
+    });
+
+    // Update the event with both generated cover images
+    await this.prisma.event.update({
+      where: { id: eventId },
+      data: {
+        generatedCoverImageUrl: firstPhoto?.googleDriveUrl || null,
+        generatedCoverImageProxyUrl: firstPhoto?.url || null,
+      },
+    });
+
+    return firstPhoto;
+  }
+
+  /**
+   * Manually regenerate cover image for an event
+   * Can be called via API endpoint
+   */
+  async regenerateCoverImage(eventId: string, country?: Country) {
+    // Verify event belongs to the requesting country
+    if (country) {
+      const event = await this.prisma.event.findFirst({
+        where: { id: eventId, country },
+      });
+      if (!event) {
+        throw new NotFoundException("Event not found");
+      }
+    }
+
+    const result = await this.updateGeneratedCoverImage(eventId);
+
+    if (!result) {
+      throw new BadRequestException(
+        "No photos available to generate cover image"
+      );
+    }
+
+    return {
+      eventId,
+      generatedCoverImageUrl: result.googleDriveUrl || null,
+      generatedCoverImageProxyUrl: result.url || null,
+      message: "Cover image regenerated successfully",
+    };
   }
 }

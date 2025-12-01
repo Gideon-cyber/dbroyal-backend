@@ -23,9 +23,6 @@ let ServicesService = class ServicesService {
     }
     async findAll(country, isVisible) {
         const where = {};
-        if (country) {
-            where.country = country;
-        }
         if (isVisible !== undefined) {
             where.isVisible = isVisible;
         }

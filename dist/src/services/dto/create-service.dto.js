@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateServiceDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
 const swagger_1 = require("@nestjs/swagger");
 class CreateServiceDto {
 }
@@ -58,10 +57,4 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], CreateServiceDto.prototype, "isVisible", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({ enum: client_1.Country, description: "Country", default: "NG" }),
-    (0, class_validator_1.IsEnum)(client_1.Country),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateServiceDto.prototype, "country", void 0);
 //# sourceMappingURL=create-service.dto.js.map

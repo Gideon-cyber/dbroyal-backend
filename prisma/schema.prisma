@@ -64,14 +64,12 @@ model Service {
   subtitle    String?  // e.g., "Turning every corporate moment into a timeless impression"
   imageUrl    String?
   isVisible   Boolean  @default(true)
-  country     Country  @default(NG)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   events      Event[]
   packages    Package[]
 
-  @@index([country])
   @@index([isVisible])
   @@index([slug])
 }
@@ -167,7 +165,9 @@ model Event {
   description      String?
   date             DateTime?
   location         String?
-  coverImageUrl    String?
+  coverImageUrl    String?        // Manually set cover image
+  generatedCoverImageUrl String?  // Automatically generated cover image from event photos (Google Drive direct URL)
+  generatedCoverImageProxyUrl String? // Backend proxy URL for generated cover image
   googleDriveUrl   String?
   driveFolderId    String?        // Store extracted folder ID for easier access
   country          Country        @default(NG)

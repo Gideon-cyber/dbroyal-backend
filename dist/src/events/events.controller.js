@@ -42,6 +42,9 @@ let EventsController = class EventsController {
         const limitNum = limit ? parseInt(limit, 10) : 10;
         return this.eventsService.findByService(serviceId, country, pageNum, limitNum, sortBy, sortOrder);
     }
+    findBySlug(country, slug) {
+        return this.eventsService.findBySlug(slug, country);
+    }
     findOne(country, id) {
         return this.eventsService.findOne(id, country);
     }
@@ -102,6 +105,9 @@ let EventsController = class EventsController {
     }
     async getSyncStatistics(country) {
         return this.eventsService.getSyncStatistics(country);
+    }
+    async regenerateCoverImage(country, id) {
+        return this.eventsService.regenerateCoverImage(id, country);
     }
     async proxyImage(driveFileId, size, res) {
         const sizeNum = size ? parseInt(size, 10) : undefined;
@@ -221,6 +227,21 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], EventsController.prototype, "findByService", null);
+__decorate([
+    (0, common_1.Get)("slug/:slug"),
+    (0, swagger_1.ApiOperation)({ summary: "Get event by slug" }),
+    (0, swagger_1.ApiParam)({
+        name: "slug",
+        description: "Event slug (URL-friendly identifier)",
+    }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Returns the event" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Event not found" }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Param)("slug")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], EventsController.prototype, "findBySlug", null);
 __decorate([
     (0, common_1.Get)(":id"),
     (0, swagger_1.ApiOperation)({ summary: "Get event by ID" }),
@@ -516,6 +537,45 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], EventsController.prototype, "getSyncStatistics", null);
+__decorate([
+    (0, common_1.Post)(":id/regenerate-cover"),
+    (0, swagger_1.ApiOperation)({
+        summary: "Regenerate cover image for an event",
+        description: "Manually regenerate the cover image using the first photo from the event's photo collection. Returns both Google Drive direct URL and backend proxy URL.",
+    }),
+    (0, swagger_1.ApiParam)({
+        name: "id",
+        description: "Event ID",
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Cover image regenerated successfully",
+        schema: {
+            properties: {
+                eventId: { type: "string" },
+                generatedCoverImageUrl: {
+                    type: "string",
+                    description: "Google Drive direct URL",
+                },
+                generatedCoverImageProxyUrl: {
+                    type: "string",
+                    description: "Backend proxy URL",
+                },
+                message: { type: "string" },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Event not found" }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: "No photos available to generate cover image",
+    }),
+    __param(0, (0, country_decorator_1.GetCountry)()),
+    __param(1, (0, common_1.Param)("id")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "regenerateCoverImage", null);
 __decorate([
     (0, common_1.Get)("photos/proxy/:driveFileId"),
     (0, swagger_1.ApiOperation)({

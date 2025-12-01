@@ -29,7 +29,6 @@ export declare class DownloadController {
             name: string;
             service: {
                 id: string;
-                country: import(".prisma/client").$Enums.Country;
                 createdAt: Date;
                 updatedAt: Date;
                 title: string;

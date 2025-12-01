@@ -8,7 +8,6 @@ export declare class BookingsController {
         package: {
             service: {
                 id: string;
-                country: import(".prisma/client").$Enums.Country;
                 createdAt: Date;
                 updatedAt: Date;
                 title: string;
@@ -65,16 +64,18 @@ export declare class BookingsController {
             slug: string;
             description: string | null;
             serviceId: string;
-            clientId: string | null;
-            location: string | null;
             date: Date | null;
+            location: string | null;
             coverImageUrl: string | null;
+            generatedCoverImageUrl: string | null;
+            generatedCoverImageProxyUrl: string | null;
             googleDriveUrl: string | null;
             driveFolderId: string | null;
             syncStatus: import(".prisma/client").$Enums.SyncStatus;
             lastSyncedAt: Date | null;
             syncErrorMessage: string | null;
             driveChangeToken: string | null;
+            clientId: string | null;
         };
         assigned: {
             bookingId: string;
@@ -90,19 +91,18 @@ export declare class BookingsController {
         packageId: string;
         price: import("@prisma/client/runtime/library").Decimal | null;
         currency: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
+        status: import(".prisma/client").$Enums.BookingStatus;
         location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
         notes: string | null;
         approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
     }>;
     findAll(country: Country, startDate?: string, endDate?: string): import(".prisma/client").Prisma.PrismaPromise<({
         package: {
             service: {
                 id: string;
-                country: import(".prisma/client").$Enums.Country;
                 createdAt: Date;
                 updatedAt: Date;
                 title: string;
@@ -150,16 +150,18 @@ export declare class BookingsController {
             slug: string;
             description: string | null;
             serviceId: string;
-            clientId: string | null;
-            location: string | null;
             date: Date | null;
+            location: string | null;
             coverImageUrl: string | null;
+            generatedCoverImageUrl: string | null;
+            generatedCoverImageProxyUrl: string | null;
             googleDriveUrl: string | null;
             driveFolderId: string | null;
             syncStatus: import(".prisma/client").$Enums.SyncStatus;
             lastSyncedAt: Date | null;
             syncErrorMessage: string | null;
             driveChangeToken: string | null;
+            clientId: string | null;
         };
         assigned: {
             bookingId: string;
@@ -175,13 +177,13 @@ export declare class BookingsController {
         packageId: string;
         price: import("@prisma/client/runtime/library").Decimal | null;
         currency: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
+        status: import(".prisma/client").$Enums.BookingStatus;
         location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
         notes: string | null;
         approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
     })[]>;
     getMetrics(country: Country): Promise<{
         byApprovalStatus: {
@@ -198,7 +200,6 @@ export declare class BookingsController {
         package: {
             service: {
                 id: string;
-                country: import(".prisma/client").$Enums.Country;
                 createdAt: Date;
                 updatedAt: Date;
                 title: string;
@@ -255,16 +256,18 @@ export declare class BookingsController {
             slug: string;
             description: string | null;
             serviceId: string;
-            clientId: string | null;
-            location: string | null;
             date: Date | null;
+            location: string | null;
             coverImageUrl: string | null;
+            generatedCoverImageUrl: string | null;
+            generatedCoverImageProxyUrl: string | null;
             googleDriveUrl: string | null;
             driveFolderId: string | null;
             syncStatus: import(".prisma/client").$Enums.SyncStatus;
             lastSyncedAt: Date | null;
             syncErrorMessage: string | null;
             driveChangeToken: string | null;
+            clientId: string | null;
         };
         assigned: {
             bookingId: string;
@@ -280,13 +283,13 @@ export declare class BookingsController {
         packageId: string;
         price: import("@prisma/client/runtime/library").Decimal | null;
         currency: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
+        status: import(".prisma/client").$Enums.BookingStatus;
         location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
         notes: string | null;
         approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
     }, null, import("@prisma/client/runtime/library").DefaultArgs, import(".prisma/client").Prisma.PrismaClientOptions>;
     update(country: Country, id: string, body: UpdateBookingDto): Promise<{
         id: string;
@@ -297,13 +300,13 @@ export declare class BookingsController {
         packageId: string;
         price: import("@prisma/client/runtime/library").Decimal | null;
         currency: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
+        status: import(".prisma/client").$Enums.BookingStatus;
         location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
         notes: string | null;
         approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
     }>;
     remove(country: Country, id: string): Promise<{
         id: string;
@@ -314,13 +317,13 @@ export declare class BookingsController {
         packageId: string;
         price: import("@prisma/client/runtime/library").Decimal | null;
         currency: string | null;
-        eventId: string | null;
-        clientId: string;
-        dateTime: Date;
+        status: import(".prisma/client").$Enums.BookingStatus;
         location: string | null;
+        clientId: string;
+        eventId: string | null;
+        dateTime: Date;
         notes: string | null;
         approvalStatus: import(".prisma/client").$Enums.ApprovalStatus;
-        status: import(".prisma/client").$Enums.BookingStatus;
     }>;
     assign(country: Country, id: string, body: AssignUsersDto): Promise<[import(".prisma/client").Prisma.BatchPayload, import(".prisma/client").Prisma.BatchPayload]>;
 }

@@ -46,6 +46,8 @@ export declare class DashboardService {
             date: Date | null;
             location: string | null;
             coverImageUrl: string | null;
+            generatedCoverImageUrl: string | null;
+            generatedCoverImageProxyUrl: string | null;
             googleDriveUrl: string | null;
             driveFolderId: string | null;
             syncStatus: import(".prisma/client").$Enums.SyncStatus;
