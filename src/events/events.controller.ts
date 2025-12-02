@@ -84,12 +84,18 @@ export class EventsController {
       },
     },
   })
-  findAll(
+  async findAll(
     @GetCountry() country: Country,
     @Query("serviceId") serviceId?: string,
     @Query("page") page?: string,
-    @Query("limit") limit?: string
+    @Query("limit") limit?: string,
+    @Res({ passthrough: true }) res?: Response
   ) {
+    // Disable caching to prevent 304 responses
+    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.setHeader("Pragma", "no-cache");
+    res?.setHeader("Expires", "0");
+
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.eventsService.findAll(country, serviceId, pageNum, limitNum);

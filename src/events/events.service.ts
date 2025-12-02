@@ -330,7 +330,7 @@ export class EventsService {
       const photos = images.map((img) => ({
         eventId,
         url: `/api/v1/events/photos/proxy/${img.id}`, // Backend proxy URL (fallback)
-        googleDriveUrl: this.googleDriveService.getPublicImageUrl(img.id), // Direct Google Drive URL
+        googleDriveUrl: this.googleDriveService.getPublicThumbnailUrl(img.id), // Direct Google Drive URL
         driveFileId: img.id,
         caption: img.name,
         status: "COMPLETE" as const,
