@@ -4,7 +4,6 @@ import {
   IsEnum,
   IsOptional,
   IsDateString,
-  IsUUID,
   IsArray,
 } from "class-validator";
 import { ApprovalStatus, BookingStatus, Country } from "@prisma/client";
@@ -16,16 +15,16 @@ export class CreateBookingDto {
   title?: string;
 
   @ApiProperty({ description: "Package ID" })
-  @IsUUID()
+  @IsString()
   packageId: string;
 
   @ApiPropertyOptional({ description: "Related event ID" })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   eventId?: string;
 
   @ApiProperty({ description: "Client ID" })
-  @IsUUID()
+  @IsString()
   clientId: string;
 
   @ApiProperty({
@@ -72,7 +71,7 @@ export class CreateBookingDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID("4", { each: true })
+  @IsString({ each: true })
   assignedUserIds?: string[];
 
   @ApiPropertyOptional({

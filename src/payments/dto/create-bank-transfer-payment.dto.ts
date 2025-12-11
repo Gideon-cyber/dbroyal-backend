@@ -1,11 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import {
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Min,
-} from "class-validator";
+import { IsNumber, IsOptional, IsString, IsUrl, Min } from "class-validator";
 
 export class CreateBankTransferPaymentDto {
   @ApiProperty({

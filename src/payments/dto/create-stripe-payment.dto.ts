@@ -3,7 +3,8 @@ import { IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateStripePaymentDto {
   @ApiProperty({
-    description: "Amount to charge in the smallest currency unit (e.g., pence for GBP)",
+    description:
+      "Amount to charge in the smallest currency unit (e.g., pence for GBP)",
     example: 50000,
     minimum: 1,
   })

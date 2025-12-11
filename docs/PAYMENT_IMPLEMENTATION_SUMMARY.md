@@ -5,14 +5,17 @@
 ### 1. Database Schema Updates (`prisma/schema.prisma`)
 
 **New Enums:**
+
 - `PaymentStatus`: UNPAID, PENDING, PAID, PARTIALLY_PAID, REFUNDED, PARTIALLY_REFUNDED, FAILED
 - `PaymentMethod`: CARD, BANK_TRANSFER, CASH, STRIPE, PAYSTACK
 
 **Updated Booking Model:**
+
 - Added payment tracking fields (paymentStatus, amountPaid, depositAmount, depositPaid)
 - Added relation to Payment model
 
 **New Payment Model:**
+
 - Tracks all payment transactions
 - Supports both Stripe and bank transfer methods
 - Stores payment proof URLs for manual verification
@@ -21,6 +24,7 @@
 ### 2. Payment Module (`src/payments/`)
 
 **Structure:**
+
 ```
 src/payments/
 ├── dto/
@@ -39,12 +43,14 @@ src/payments/
 **Key Components:**
 
 #### StripeProvider
+
 - Creates and manages Stripe Payment Intents
 - Handles payment confirmations
 - Processes refunds
 - Constructs webhook events
 
 #### PaymentsService
+
 - Dual payment system (Stripe for UK, Bank Transfer for Nigeria)
 - Bank account details retrieval
 - Payment creation and verification
@@ -54,6 +60,7 @@ src/payments/
 - Refund processing
 
 #### PaymentsController
+
 - 10+ RESTful endpoints for payment operations
 - Admin verification endpoints
 - Stripe webhook endpoint
@@ -62,19 +69,23 @@ src/payments/
 ### 3. Updated Modules
 
 **BookingsModule:**
+
 - Now imports PaymentsModule
 - Exports BookingsService for cross-module usage
 
 **BookingsService:**
+
 - Initialize payment status on booking creation
 - Set initial payment fields (UNPAID, amountPaid: 0)
 
 **AppModule:**
+
 - Registered PaymentsModule globally
 
 ### 4. API Endpoints
 
 #### Payment Operations
+
 - `GET /payments/bank-account` - Get Nigeria bank account details
 - `POST /payments/bookings/:bookingId/stripe` - Create Stripe payment intent
 - `POST /payments/bookings/:bookingId/bank-transfer` - Submit bank transfer proof
@@ -90,6 +101,7 @@ src/payments/
 ### 5. Environment Variables
 
 Added to `.env.example`:
+
 ```env
 # Stripe Configuration (UK Payments)
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
@@ -104,6 +116,7 @@ NG_ACCOUNT_NAME=DBRoyal Photography Ltd
 ### 6. Documentation
 
 **Created `docs/PAYMENT_INTEGRATION.md`:**
+
 - Complete setup guide
 - API endpoint documentation
 - Payment flow diagrams
@@ -114,6 +127,7 @@ NG_ACCOUNT_NAME=DBRoyal Photography Ltd
 - Troubleshooting guide
 
 **Created `setup-payments.sh`:**
+
 - Automated setup script
 - Installs dependencies
 - Runs migrations
@@ -122,6 +136,7 @@ NG_ACCOUNT_NAME=DBRoyal Photography Ltd
 ## Payment Flows
 
 ### UK Booking (Stripe - Automated)
+
 ```
 Client → Create Booking → POST /payments/bookings/:id/stripe
 → Stripe Payment Intent → Frontend Stripe Elements → Payment Success
@@ -129,6 +144,7 @@ Client → Create Booking → POST /payments/bookings/:id/stripe
 ```
 
 ### Nigeria Booking (Bank Transfer - Manual)
+
 ```
 Client → Create Booking → GET /payments/bank-account
 → Make Transfer → Upload Screenshot → POST /payments/bookings/:id/bank-transfer
@@ -139,33 +155,39 @@ Client → Create Booking → GET /payments/bank-account
 ## Features
 
 ✅ **Dual Payment System**
+
 - Stripe for UK (automated card payments)
 - Bank transfer for Nigeria (manual verification)
 
 ✅ **Payment Tracking**
+
 - Full payment history per booking
 - Real-time balance calculations
 - Payment status updates
 
 ✅ **Admin Controls**
+
 - Verify bank transfer payments
 - View pending payments
 - Process refunds
 - Payment proof review
 
 ✅ **Stripe Integration**
+
 - Payment Intent API
 - Webhook support
 - Refund processing
 - 3D Secure support
 
 ✅ **Bank Transfer Support**
+
 - Payment proof upload
 - Manual verification workflow
 - Admin approval/rejection
 - Notes and reference tracking
 
 ✅ **Security**
+
 - Webhook signature verification
 - Admin authentication required
 - Secure credential storage
@@ -174,23 +196,28 @@ Client → Create Booking → GET /payments/bank-account
 ## Next Steps
 
 ### 1. Install Dependencies
+
 ```bash
 npm install stripe
 ```
 
 ### 2. Run Database Migration
+
 ```bash
 npx prisma migrate dev --name add_payment_support
 npx prisma generate
 ```
 
 ### 3. Configure Environment
+
 Update `.env` with:
+
 - Stripe API keys (from Stripe Dashboard)
 - Stripe webhook secret
 - Nigeria bank account details
 
 ### 4. Set Up Stripe Webhook
+
 1. Go to Stripe Dashboard → Webhooks
 2. Add endpoint: `https://yourdomain.com/payments/stripe/webhook`
 3. Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`
@@ -199,6 +226,7 @@ Update `.env` with:
 ### 5. Test the Integration
 
 **Test Stripe (UK):**
+
 ```bash
 # Use test card: 4242 4242 4242 4242
 curl -X POST http://localhost:3000/payments/bookings/:id/stripe \
@@ -208,6 +236,7 @@ curl -X POST http://localhost:3000/payments/bookings/:id/stripe \
 ```
 
 **Test Bank Transfer (Nigeria):**
+
 ```bash
 curl -X GET http://localhost:3000/payments/bank-account \
   -H "X-Country: NG"
@@ -225,6 +254,7 @@ curl -X POST http://localhost:3000/payments/bookings/:id/bank-transfer \
 ### 6. Frontend Integration
 
 See `docs/PAYMENT_INTEGRATION.md` for:
+
 - Stripe Elements integration
 - Bank transfer UI components
 - Admin verification panel
@@ -233,6 +263,7 @@ See `docs/PAYMENT_INTEGRATION.md` for:
 ## Quick Start Script
 
 Run the automated setup:
+
 ```bash
 chmod +x setup-payments.sh
 ./setup-payments.sh
@@ -241,12 +272,14 @@ chmod +x setup-payments.sh
 ## Files Modified
 
 ### Created:
+
 - `src/payments/` (entire module)
 - `docs/PAYMENT_INTEGRATION.md`
 - `setup-payments.sh`
 - `docs/PAYMENT_IMPLEMENTATION_SUMMARY.md` (this file)
 
 ### Modified:
+
 - `prisma/schema.prisma` (added Payment model, updated Booking)
 - `src/app.module.ts` (imported PaymentsModule)
 - `src/bookings/bookings.module.ts` (imported PaymentsModule)
@@ -256,6 +289,7 @@ chmod +x setup-payments.sh
 ## Support & Troubleshooting
 
 See `docs/PAYMENT_INTEGRATION.md` for:
+
 - Common issues and solutions
 - Webhook debugging
 - Payment flow testing
@@ -264,6 +298,7 @@ See `docs/PAYMENT_INTEGRATION.md` for:
 ## Future Enhancements
 
 Consider adding:
+
 - [ ] Paystack integration for Nigeria card payments
 - [ ] Payment installment plans
 - [ ] Auto-generated invoices

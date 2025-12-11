@@ -23,7 +23,7 @@ export class BookingsService {
     if (typeof rest.dateTime === "string")
       rest.dateTime = new Date(rest.dateTime);
 
-    // Fetch package pricing for the booking country
+    // Fetch package pricing for the booking country (outside transaction)
     const packageWithPricing = await this.prisma.package.findUnique({
       where: { id: data.packageId },
       include: {
@@ -47,23 +47,12 @@ export class BookingsService {
       amountPaid: 0,
     };
 
+    // Fast transaction: just create booking and assignments
     return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.create({
         data: bookingData as any,
-        include: {
-          package: {
-            include: {
-              service: true,
-              features: {
-                orderBy: { sortOrder: "asc" },
-              },
-              pricing: true,
-            },
-          },
-          client: true,
-          event: true,
-        },
       });
+      
       if (assignedUserIds?.length) {
         await tx.bookingAssignment.createMany({
           data: assignedUserIds.map((userId) => ({
@@ -72,7 +61,11 @@ export class BookingsService {
           })),
         });
       }
-      return tx.booking.findUnique({
+      
+      return booking;
+    }).then((booking) => {
+      // Fetch full booking with relations outside transaction
+      return this.prisma.booking.findUnique({
         where: { id: booking.id },
         include: {
           assigned: true,

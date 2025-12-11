@@ -10,7 +10,7 @@ The payment system has been successfully integrated into the DBRoyal backend.
 ✅ **API Endpoints** - 10+ endpoints for payment operations  
 ✅ **Bank Transfer Support** - Manual verification workflow for Nigeria  
 ✅ **Admin Tools** - Payment verification and management  
-✅ **Documentation** - Complete guides and examples  
+✅ **Documentation** - Complete guides and examples
 
 ## Quick Start
 
@@ -131,23 +131,24 @@ Any future expiry date and any 3-digit CVC.
 
 ## API Endpoints Overview
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/payments/bank-account` | GET | Get Nigeria bank details |
-| `/payments/bookings/:id/stripe` | POST | Create Stripe payment |
-| `/payments/bookings/:id/bank-transfer` | POST | Submit bank transfer proof |
-| `/payments/stripe/confirm` | POST | Confirm Stripe payment |
-| `/payments/verify` | POST | Admin: Verify bank transfer |
-| `/payments/pending` | GET | Admin: Get pending payments |
-| `/payments/bookings/:id` | GET | Get booking payments |
-| `/payments/bookings/:id/balance` | GET | Get booking balance |
-| `/payments/:id` | GET | Get payment details |
-| `/payments/:id/refund` | POST | Process refund |
-| `/payments/stripe/webhook` | POST | Stripe webhook endpoint |
+| Endpoint                               | Method | Description                 |
+| -------------------------------------- | ------ | --------------------------- |
+| `/payments/bank-account`               | GET    | Get Nigeria bank details    |
+| `/payments/bookings/:id/stripe`        | POST   | Create Stripe payment       |
+| `/payments/bookings/:id/bank-transfer` | POST   | Submit bank transfer proof  |
+| `/payments/stripe/confirm`             | POST   | Confirm Stripe payment      |
+| `/payments/verify`                     | POST   | Admin: Verify bank transfer |
+| `/payments/pending`                    | GET    | Admin: Get pending payments |
+| `/payments/bookings/:id`               | GET    | Get booking payments        |
+| `/payments/bookings/:id/balance`       | GET    | Get booking balance         |
+| `/payments/:id`                        | GET    | Get payment details         |
+| `/payments/:id/refund`                 | POST   | Process refund              |
+| `/payments/stripe/webhook`             | POST   | Stripe webhook endpoint     |
 
 ## Documentation
 
 📚 **Complete Documentation**: `docs/PAYMENT_INTEGRATION.md`
+
 - Setup instructions
 - API reference
 - Frontend integration examples
@@ -155,6 +156,7 @@ Any future expiry date and any 3-digit CVC.
 - Security best practices
 
 📝 **Implementation Summary**: `docs/PAYMENT_IMPLEMENTATION_SUMMARY.md`
+
 - What was added
 - File structure
 - Database changes
@@ -165,11 +167,13 @@ Any future expiry date and any 3-digit CVC.
 ### For UK (Stripe)
 
 Install Stripe packages:
+
 ```bash
 npm install @stripe/stripe-js @stripe/react-stripe-js
 ```
 
 See `docs/PAYMENT_INTEGRATION.md` section "Frontend Integration" for:
+
 - Stripe Elements setup
 - Payment form component
 - Payment confirmation flow
@@ -177,6 +181,7 @@ See `docs/PAYMENT_INTEGRATION.md` section "Frontend Integration" for:
 ### For Nigeria (Bank Transfer)
 
 Components needed:
+
 1. Bank account display
 2. Payment proof upload
 3. Payment status tracking
@@ -186,6 +191,7 @@ See documentation for complete examples.
 ## Admin Panel
 
 You'll need to build admin UI for:
+
 - Viewing pending payments
 - Reviewing payment proof images
 - Approving/rejecting payments
@@ -201,7 +207,7 @@ Example code provided in `docs/PAYMENT_INTEGRATION.md`.
 ⚠️ **Never expose** `STRIPE_SECRET_KEY` in frontend code  
 ⚠️ **Always validate** webhook signatures  
 ⚠️ **Use HTTPS** for webhook endpoints in production  
-⚠️ **Implement auth** on admin verification endpoints  
+⚠️ **Implement auth** on admin verification endpoints
 
 ### Production Checklist
 

@@ -5,11 +5,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { StripeProvider } from "./providers/stripe.provider";
-import {
-  Country,
-  PaymentMethod,
-  PaymentStatus,
-} from "@prisma/client";
+import { Country, PaymentMethod, PaymentStatus } from "@prisma/client";
 import Stripe from "stripe";
 
 @Injectable()
@@ -82,7 +78,8 @@ export class PaymentsService {
         bookingId: booking.id,
         clientId: booking.clientId,
         description:
-          description || `Payment for ${booking.package.name} - ${booking.title || "Booking"}`,
+          description ||
+          `Payment for ${booking.package.name} - ${booking.title || "Booking"}`,
       }
     );
 

@@ -3,6 +3,7 @@
 ## Overview
 
 The DBRoyal backend now supports payment processing for bookings with two methods:
+
 - **Stripe** for UK bookings (automated card payments)
 - **Bank Transfer** for Nigeria bookings (manual verification with payment proof)
 
@@ -14,7 +15,7 @@ The DBRoyal backend now supports payment processing for bookings with two method
 ✅ Automatic payment status updates  
 ✅ Refund support  
 ✅ Stripe webhook integration  
-✅ Payment proof upload for manual transfers  
+✅ Payment proof upload for manual transfers
 
 ---
 
@@ -72,6 +73,7 @@ Headers: X-Country: NG
 ```
 
 **Response:**
+
 ```json
 {
   "country": "Nigeria",
@@ -108,6 +110,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "payment": {
@@ -144,6 +147,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "id": "clxxx789",
@@ -205,6 +209,7 @@ GET /payments/bookings/:bookingId/balance
 ```
 
 **Response:**
+
 ```json
 {
   "totalPrice": 500,
@@ -264,29 +269,29 @@ model Payment {
   id                    String         @id @default(cuid())
   bookingId             String
   booking               Booking        @relation(...)
-  
+
   amount                Decimal        @db.Decimal(10, 2)
   currency              String
   method                PaymentMethod
   status                PaymentStatus  @default(PENDING)
-  
+
   // Stripe fields
   stripePaymentIntentId String?        @unique
   stripeChargeId        String?
-  
+
   // Bank transfer fields
   paymentProofUrl       String?
   bankName              String?
   accountNumber         String?
   transferReference     String?
-  
+
   // Verification
   verifiedBy            String?
   verifiedAt            DateTime?
-  
+
   paidBy                String?
   notes                 String?
-  
+
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
 }
@@ -297,13 +302,13 @@ model Payment {
 ```prisma
 model Booking {
   // ... existing fields ...
-  
+
   // Payment fields
   paymentStatus  PaymentStatus   @default(UNPAID)
   amountPaid     Decimal         @default(0) @db.Decimal(10, 2)
   depositAmount  Decimal?        @db.Decimal(10, 2)
   depositPaid    Boolean         @default(false)
-  
+
   payments       Payment[]
 }
 ```
@@ -315,11 +320,13 @@ model Booking {
 ### Stripe (UK)
 
 1. Install Stripe.js:
+
 ```bash
 npm install @stripe/stripe-js @stripe/react-stripe-js
 ```
 
 2. Create payment form:
+
 ```typescript
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -329,10 +336,10 @@ const stripePromise = loadStripe('pk_test_xxxxx');
 function PaymentForm({ bookingId }) {
   const stripe = useStripe();
   const elements = useElements();
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Create payment intent
     const { clientSecret, paymentIntentId } = await fetch(
       `/payments/bookings/${bookingId}/stripe`,
@@ -342,14 +349,14 @@ function PaymentForm({ bookingId }) {
         body: JSON.stringify({ amount: 50000, currency: 'GBP' })
       }
     ).then(r => r.json());
-    
+
     // Confirm payment
     const result = await stripe.confirmCardPayment(clientSecret, {
       payment_method: {
         card: elements.getElement(CardElement),
       }
     });
-    
+
     if (result.error) {
       console.error(result.error.message);
     } else {
@@ -361,7 +368,7 @@ function PaymentForm({ bookingId }) {
       });
     }
   };
-  
+
   return (
     <Elements stripe={stripePromise}>
       <form onSubmit={handleSubmit}>
@@ -383,7 +390,7 @@ function PaymentForm({ bookingId }) {
 function BankTransferPayment({ bookingId }) {
   const [bankDetails, setBankDetails] = useState(null);
   const [proofUrl, setProofUrl] = useState('');
-  
+
   useEffect(() => {
     fetch('/payments/bank-account', {
       headers: { 'X-Country': 'NG' }
@@ -391,7 +398,7 @@ function BankTransferPayment({ bookingId }) {
       .then(r => r.json())
       .then(setBankDetails);
   }, []);
-  
+
   const handleSubmit = async () => {
     await fetch(`/payments/bookings/${bookingId}/bank-transfer`, {
       method: 'POST',
@@ -404,7 +411,7 @@ function BankTransferPayment({ bookingId }) {
       })
     });
   };
-  
+
   return (
     <div>
       {bankDetails && (
@@ -415,9 +422,9 @@ function BankTransferPayment({ bookingId }) {
           <p>Name: {bankDetails.accounts[0].accountName}</p>
         </div>
       )}
-      
-      <input 
-        type="url" 
+
+      <input
+        type="url"
         placeholder="Payment proof URL"
         value={proofUrl}
         onChange={(e) => setProofUrl(e.target.value)}
@@ -439,13 +446,13 @@ Display pending payments with proof images:
 ```typescript
 function PendingPayments() {
   const [payments, setPayments] = useState([]);
-  
+
   useEffect(() => {
     fetch('/payments/pending?country=NG')
       .then(r => r.json())
       .then(setPayments);
   }, []);
-  
+
   const verifyPayment = async (paymentId, approved) => {
     await fetch(`/payments/verify?adminUserId=clzzz111`, {
       method: 'POST',
@@ -456,10 +463,10 @@ function PendingPayments() {
         notes: approved ? 'Verified' : 'Invalid proof'
       })
     });
-    
+
     // Refresh list
   };
-  
+
   return (
     <div>
       {payments.map(payment => (
@@ -487,6 +494,7 @@ function PendingPayments() {
 ### Test Stripe Payments
 
 Use Stripe test cards:
+
 - **Success:** `4242 4242 4242 4242`
 - **Decline:** `4000 0000 0000 0002`
 - **3D Secure:** `4000 0025 0000 3155`
@@ -549,6 +557,7 @@ Use Stripe test cards:
 ## Support
 
 For issues or questions:
+
 - Check application logs
 - Review Stripe Dashboard events
 - Verify environment variables

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsUUID } from "class-validator";
+import { IsArray, IsString } from "class-validator";
 
 export class AssignUsersDto {
   @ApiProperty({
@@ -7,6 +7,6 @@ export class AssignUsersDto {
     type: [String],
   })
   @IsArray()
-  @IsUUID("4", { each: true })
+  @IsString({ each: true })
   userIds: string[];
 }
