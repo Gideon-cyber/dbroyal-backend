@@ -121,9 +121,11 @@ export class DownloadController {
   @ApiQuery({ name: "eventId", required: false })
   @ApiQuery({ name: "startDate", required: false })
   @ApiQuery({ name: "endDate", required: false })
+  @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
+  @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
   @ApiResponse({
     status: 200,
-    description: "Returns list of download requests",
+    description: "Returns paginated list of download requests",
   })
   async listDownloadRequests(
     @GetCountry() country: Country,

@@ -29,10 +29,13 @@ async function bootstrap() {
           errors: Object.values(error.constraints || {}),
           value: error.value,
         }));
-        
+
         // Log validation errors to console for debugging
-        console.error('❌ Validation Error:', JSON.stringify(messages, null, 2));
-        
+        console.error(
+          "❌ Validation Error:",
+          JSON.stringify(messages, null, 2)
+        );
+
         return new BadRequestException({
           message: "Validation failed",
           errors: messages,

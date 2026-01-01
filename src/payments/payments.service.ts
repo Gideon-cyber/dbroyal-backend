@@ -2,18 +2,186 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { StripeProvider } from "./providers/stripe.provider";
+import { EmailService } from "../email/email.service";
 import { Country, PaymentMethod, PaymentStatus } from "@prisma/client";
 import Stripe from "stripe";
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly stripeProvider: StripeProvider
+    private readonly stripeProvider: StripeProvider,
+    private readonly emailService: EmailService
   ) {}
+
+  /**
+   * Create a Stripe payment intent for downloads
+   */
+  async createDownloadPayment(
+    downloadId: string,
+    amount: number,
+    currency: string,
+    description?: string,
+    paidBy?: string
+  ) {
+    // Verify download exists
+    const download = await this.prisma.downloadSelection.findUnique({
+      where: { id: downloadId },
+      include: { event: { include: { client: true } } },
+    });
+
+    if (!download) {
+      throw new NotFoundException("Download request not found");
+    }
+
+    // Check if download is in correct status
+    if (download.deliveryStatus !== "PENDING_PAYMENT") {
+      throw new BadRequestException(
+        "Download request must be in PENDING_PAYMENT status"
+      );
+    }
+
+    // Create Stripe Payment Intent
+    const paymentIntent = await this.stripeProvider.createPaymentIntent(
+      amount,
+      currency,
+      {
+        bookingId: download.id, // Using bookingId field for compatibility
+        clientId: download.event.clientId || "",
+        description:
+          description ||
+          `Payment for ${download.photoCount} photos download - Event ${download.event.name || "Download"}`,
+      }
+    );
+
+    // Update download record with payment info
+    await this.prisma.downloadSelection.update({
+      where: { id: downloadId },
+      data: {
+        stripePaymentIntentId: paymentIntent.id,
+        paymentAmount: amount / 100, // Convert from pence to pounds
+        paymentCurrency: currency.toUpperCase(),
+        paymentMethod: PaymentMethod.STRIPE,
+        paymentStatus: PaymentStatus.PENDING,
+        customerName: paidBy || download.customerName,
+      },
+    });
+
+    return {
+      downloadId: download.id,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount: amount / 100,
+      currency: currency.toUpperCase(),
+    };
+  }
+
+  /**
+   * Confirm Stripe payment for download after client completes it
+   */
+  async confirmDownloadPayment(paymentIntentId: string, userId?: string) {
+    // Find download by payment intent ID
+    const download = await this.prisma.downloadSelection.findUnique({
+      where: { stripePaymentIntentId: paymentIntentId },
+      include: {
+        event: {
+          include: {
+            client: true,
+          },
+        },
+      },
+    });
+
+    if (!download) {
+      throw new NotFoundException("Download request not found");
+    }
+
+    // Retrieve payment intent from Stripe
+    const paymentIntent =
+      await this.stripeProvider.retrievePaymentIntent(paymentIntentId);
+
+    if (paymentIntent.status === "succeeded") {
+      // Check if this is a UK event - auto-approve for UK users
+      const isUK = download.event.country === Country.UK;
+
+      // Update download payment status
+      const updatedDownload = await this.prisma.downloadSelection.update({
+        where: { id: download.id },
+        data: {
+          paymentStatus: PaymentStatus.PAID,
+          paymentVerifiedAt: new Date(),
+          paymentVerifiedBy: userId,
+          // Auto-approve for UK, manual approval for others
+          deliveryStatus: isUK ? "PROCESSING_DELIVERY" : "PENDING_APPROVAL",
+          approvedAt: isUK ? new Date() : undefined,
+          approvedBy: isUK ? userId || "system" : undefined,
+        },
+      });
+
+      // For UK users, automatically send download email
+      if (isUK) {
+        await this.sendDownloadReadyEmail(download.id);
+      }
+
+      return updatedDownload;
+    } else if (paymentIntent.status === "canceled") {
+      await this.prisma.downloadSelection.update({
+        where: { id: download.id },
+        data: { paymentStatus: PaymentStatus.FAILED },
+      });
+      throw new BadRequestException("Payment was canceled");
+    } else {
+      throw new BadRequestException(
+        `Payment status is ${paymentIntent.status}, not succeeded`
+      );
+    }
+  }
+
+  /**
+   * Get download payment details
+   */
+  async getDownloadPayment(downloadId: string) {
+    const download = await this.prisma.downloadSelection.findUnique({
+      where: { id: downloadId },
+      include: {
+        event: {
+          include: {
+            client: true,
+          },
+        },
+      },
+    });
+
+    if (!download) {
+      throw new NotFoundException("Download request not found");
+    }
+
+    return {
+      id: download.id,
+      eventId: download.eventId,
+      eventTitle: download.event.name,
+      photoCount: download.photoCount,
+      customerName: download.customerName,
+      customerEmail: download.customerEmail,
+      paymentStatus: download.paymentStatus,
+      paymentAmount: download.paymentAmount
+        ? Number(download.paymentAmount)
+        : 0,
+      paymentCurrency: download.paymentCurrency,
+      paymentMethod: download.paymentMethod,
+      stripePaymentIntentId: download.stripePaymentIntentId,
+      paymentVerifiedAt: download.paymentVerifiedAt,
+      deliveryStatus: download.deliveryStatus,
+      createdAt: download.createdAt,
+      updatedAt: download.updatedAt,
+    };
+  }
 
   /**
    * Get bank account details for Nigeria payments
@@ -122,6 +290,9 @@ export class PaymentsService {
       await this.stripeProvider.retrievePaymentIntent(paymentIntentId);
 
     if (paymentIntent.status === "succeeded") {
+      // Check if this is a UK booking - auto-approve for UK users
+      const isUK = payment.booking.country === Country.UK;
+
       // Update payment status
       const updatedPayment = await this.prisma.payment.update({
         where: { id: payment.id },
@@ -135,6 +306,19 @@ export class PaymentsService {
 
       // Update booking payment status
       await this.updateBookingPaymentStatus(payment.bookingId);
+
+      // For UK bookings, automatically approve the booking
+      if (isUK) {
+        await this.prisma.booking.update({
+          where: { id: payment.bookingId },
+          data: {
+            approvalStatus: "APPROVED",
+          },
+        });
+      }
+
+      // Send booking accepted email to client
+      await this.sendBookingAcceptedEmail(payment.bookingId);
 
       return updatedPayment;
     } else if (paymentIntent.status === "canceled") {
@@ -242,9 +426,23 @@ export class PaymentsService {
       },
     });
 
-    // If approved, update booking payment status
+    // If approved, update booking payment status and send email
     if (approved) {
       await this.updateBookingPaymentStatus(payment.bookingId);
+
+      // For UK bookings, automatically approve the booking
+      const isUK = payment.booking.country === Country.UK;
+      if (isUK) {
+        await this.prisma.booking.update({
+          where: { id: payment.bookingId },
+          data: {
+            approvalStatus: "APPROVED",
+          },
+        });
+      }
+
+      // Send booking accepted email to client
+      await this.sendBookingAcceptedEmail(payment.bookingId);
     }
 
     return updatedPayment;
@@ -346,6 +544,114 @@ export class PaymentsService {
   }
 
   /**
+   * Send booking accepted email to client
+   */
+  private async sendBookingAcceptedEmail(bookingId: string): Promise<void> {
+    try {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          client: true,
+          package: true,
+        },
+      });
+
+      if (!booking) {
+        this.logger.warn(
+          `Booking ${bookingId} not found for email notification`
+        );
+        return;
+      }
+
+      if (!booking.client?.email) {
+        this.logger.warn(`No email found for client of booking ${bookingId}`);
+        return;
+      }
+
+      await this.emailService.sendBookingAccepted({
+        to: booking.client.email,
+        clientName: booking.client.name,
+        eventName: booking.title || booking.package.name,
+        eventDate: booking.dateTime
+          ? new Date(booking.dateTime).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "To be confirmed",
+        additionalInfo:
+          "Your payment has been confirmed and your booking is now active. We look forward to capturing your special moments!",
+      });
+
+      this.logger.log(
+        `Booking accepted email sent to ${booking.client.email} for booking ${bookingId}`
+      );
+    } catch (error) {
+      // Log error but don't throw - email failure shouldn't break payment flow
+      this.logger.error(
+        `Failed to send booking accepted email for booking ${bookingId}: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Send download ready email to client
+   */
+  private async sendDownloadReadyEmail(downloadId: string): Promise<void> {
+    try {
+      const download = await this.prisma.downloadSelection.findUnique({
+        where: { id: downloadId },
+        include: {
+          event: {
+            include: {
+              client: true,
+            },
+          },
+        },
+      });
+
+      if (!download) {
+        this.logger.warn(
+          `Download ${downloadId} not found for email notification`
+        );
+        return;
+      }
+
+      // Check if we have customer email or event client email
+      const recipientEmail =
+        download.customerEmail || download.event.client?.email;
+      const recipientName =
+        download.customerName || download.event.client?.name;
+
+      if (!recipientEmail) {
+        this.logger.warn(`No email found for download ${downloadId}`);
+        return;
+      }
+
+      // Generate download URL
+      const downloadUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/download/${download.token}`;
+
+      await this.emailService.sendDownloadReady({
+        to: recipientEmail,
+        clientName: recipientName || "Valued Customer",
+        eventName: download.event.name,
+        downloadUrl,
+        expiresAt: download.expiresAt,
+      });
+
+      this.logger.log(
+        `Download ready email sent to ${recipientEmail} for download ${downloadId}`
+      );
+    } catch (error) {
+      // Log error but don't throw - email failure shouldn't break payment flow
+      this.logger.error(
+        `Failed to send download ready email for download ${downloadId}: ${error.message}`
+      );
+    }
+  }
+
+  /**
    * Update booking payment status based on payments
    */
   private async updateBookingPaymentStatus(bookingId: string) {
@@ -405,14 +711,36 @@ export class PaymentsService {
     switch (event.type) {
       case "payment_intent.succeeded":
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await this.confirmStripePayment(paymentIntent.id);
+        // Check if it's a booking or download payment
+        const bookingPayment = await this.prisma.payment.findFirst({
+          where: { stripePaymentIntentId: paymentIntent.id },
+        });
+        if (bookingPayment) {
+          await this.confirmStripePayment(paymentIntent.id);
+        } else {
+          // Try download payment
+          const downloadPayment = await this.prisma.downloadSelection.findFirst(
+            {
+              where: { stripePaymentIntentId: paymentIntent.id },
+            }
+          );
+          if (downloadPayment) {
+            await this.confirmDownloadPayment(paymentIntent.id);
+          }
+        }
         break;
 
       case "payment_intent.payment_failed":
         const failedIntent = event.data.object as Stripe.PaymentIntent;
+        // Handle failed booking payments
         await this.prisma.payment.updateMany({
           where: { stripePaymentIntentId: failedIntent.id },
           data: { status: PaymentStatus.FAILED },
+        });
+        // Handle failed download payments
+        await this.prisma.downloadSelection.updateMany({
+          where: { stripePaymentIntentId: failedIntent.id },
+          data: { paymentStatus: PaymentStatus.FAILED },
         });
         break;
 

@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { EmailService } from "../email/email.service";
 import { ApprovalStatus, BookingStatus, Country } from "@prisma/client";
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService
+  ) {}
 
   async create(data: {
     title?: string;
@@ -47,45 +51,98 @@ export class BookingsService {
       amountPaid: 0,
     };
 
-    // Fast transaction: just create booking and assignments
-    return this.prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.create({
-        data: bookingData as any,
-      });
-      
-      if (assignedUserIds?.length) {
-        await tx.bookingAssignment.createMany({
-          data: assignedUserIds.map((userId) => ({
-            bookingId: booking.id,
-            userId,
-          })),
+    // Optimized transaction: create booking and assignments in a single fast transaction
+    // Compatible with PgBouncer transaction pooling mode
+    const booking = await this.prisma.$transaction(
+      async (tx) => {
+        // Create booking
+        const newBooking = await tx.booking.create({
+          data: bookingData as any,
         });
-      }
-      
-      return booking;
-    }).then((booking) => {
-      // Fetch full booking with relations outside transaction
-      return this.prisma.booking.findUnique({
-        where: { id: booking.id },
-        include: {
-          assigned: true,
-          client: true,
-          event: true,
-          package: {
-            include: {
-              service: true,
-              features: {
-                orderBy: { sortOrder: "asc" },
+
+        // Create assignments if provided
+        if (assignedUserIds?.length) {
+          await tx.bookingAssignment.createMany({
+            data: assignedUserIds.map((userId) => ({
+              bookingId: newBooking.id,
+              userId,
+            })),
+          });
+        }
+
+        // Return booking with all relations in same transaction
+        return tx.booking.findUnique({
+          where: { id: newBooking.id },
+          include: {
+            assigned: true,
+            client: true,
+            event: true,
+            package: {
+              include: {
+                service: true,
+                features: {
+                  orderBy: { sortOrder: "asc" },
+                },
+                pricing: true,
               },
-              pricing: true,
             },
           },
-        },
-      });
-    });
+        });
+      },
+      {
+        maxWait: 5000, // Wait up to 5s for transaction to start
+        timeout: 10000, // Transaction must complete within 10s
+      }
+    );
+
+    // Send email based on country (non-blocking, outside transaction)
+    if (booking.client?.email) {
+      // UK bookings get automatic confirmation, Nigeria bookings need approval
+      if (booking.country === Country.UK) {
+        this.emailService
+          .sendBookingConfirmation({
+            to: booking.client.email,
+            clientName: booking.client.name,
+            eventName: booking.event?.name || booking.title || "Your Event",
+            eventDate: booking.dateTime.toLocaleDateString(),
+            packageName: booking.package.name,
+            amount: Number(booking.price || 0),
+            currency: booking.currency,
+            country: booking.country,
+          })
+          .catch((error) => {
+            console.error("Failed to send booking confirmation email:", error);
+          });
+      } else if (booking.country === Country.NG) {
+        this.emailService
+          .sendBookingPendingApproval({
+            to: booking.client.email,
+            clientName: booking.client.name,
+            eventName: booking.event?.name || booking.title || "Your Event",
+            eventDate: booking.dateTime.toLocaleDateString(),
+            packageName: booking.package.name,
+            currency: booking.currency,
+            country: booking.country,
+          })
+          .catch((error) => {
+            console.error(
+              "Failed to send booking pending approval email:",
+              error
+            );
+          });
+      }
+    }
+
+    return booking;
   }
 
-  findAll(country?: Country, startDate?: string, endDate?: string) {
+  async findAll(
+    country?: Country,
+    startDate?: string,
+    endDate?: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
     const where: any = country ? { country } : {};
 
     // Add date filtering if provided
@@ -101,23 +158,42 @@ export class BookingsService {
       }
     }
 
-    return this.prisma.booking.findMany({
-      where,
-      include: {
-        assigned: true,
-        client: true,
-        event: true,
-        package: {
-          include: {
-            service: true,
-            features: {
-              orderBy: { sortOrder: "asc" },
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Execute queries in parallel
+    const [bookings, total] = await Promise.all([
+      this.prisma.booking.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          assigned: true,
+          client: true,
+          event: true,
+          package: {
+            include: {
+              service: true,
+              features: {
+                orderBy: { sortOrder: "asc" },
+              },
             },
           },
         },
+        orderBy: { dateTime: "desc" },
+      }),
+      this.prisma.booking.count({ where }),
+    ]);
+
+    return {
+      data: bookings,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { dateTime: "desc" },
-    });
+    };
   }
 
   findOne(id: string, country?: Country) {
@@ -153,7 +229,39 @@ export class BookingsService {
 
     if (data?.dateTime && typeof data.dateTime === "string")
       data.dateTime = new Date(data.dateTime);
-    return this.prisma.booking.update({ where: { id }, data });
+
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id },
+      data,
+      include: {
+        client: true,
+        event: true,
+        package: true,
+      },
+    });
+
+    // Send booking accepted email if status changed to APPROVED
+    if (
+      data.approvalStatus === ApprovalStatus.APPROVED &&
+      updatedBooking.client?.email
+    ) {
+      this.emailService
+        .sendBookingAccepted({
+          to: updatedBooking.client.email,
+          clientName: updatedBooking.client.name,
+          eventName:
+            updatedBooking.event?.name || updatedBooking.title || "Your Event",
+          eventDate: updatedBooking.dateTime.toLocaleDateString(),
+          additionalInfo: data.notes || updatedBooking.notes,
+          currency: updatedBooking.currency,
+          country: updatedBooking.country,
+        })
+        .catch((error) => {
+          console.error("Failed to send booking accepted email:", error);
+        });
+    }
+
+    return updatedBooking;
   }
 
   async remove(id: string, country?: Country) {

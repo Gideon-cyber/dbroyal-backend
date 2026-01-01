@@ -30,14 +30,24 @@ export class BookingsController {
   }
 
   @Get()
-  @ApiOperation({ summary: "Get all bookings" })
-  @ApiResponse({ status: 200, description: "Returns all bookings" })
+  @ApiOperation({ summary: "Get all bookings with pagination" })
+  @ApiResponse({ status: 200, description: "Returns paginated bookings" })
   findAll(
     @GetCountry() country: Country,
     @Query("startDate") startDate?: string,
-    @Query("endDate") endDate?: string
+    @Query("endDate") endDate?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string
   ) {
-    return this.bookingsService.findAll(country, startDate, endDate);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.bookingsService.findAll(
+      country,
+      startDate,
+      endDate,
+      pageNum,
+      limitNum
+    );
   }
 
   @Get("metrics")

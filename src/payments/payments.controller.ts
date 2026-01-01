@@ -47,6 +47,28 @@ export class PaymentsController {
     return this.paymentsService.getBankAccountDetails(country);
   }
 
+  @Post("downloads/:downloadId/stripe")
+  @ApiOperation({ summary: "Create a Stripe payment intent for download" })
+  @ApiParam({ name: "downloadId", description: "Download Selection ID" })
+  @ApiResponse({
+    status: 201,
+    description: "Payment intent created successfully",
+  })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 404, description: "Download not found" })
+  createDownloadPayment(
+    @Param("downloadId") downloadId: string,
+    @Body() dto: CreateStripePaymentDto
+  ) {
+    return this.paymentsService.createDownloadPayment(
+      downloadId,
+      dto.amount,
+      dto.currency,
+      dto.description,
+      dto.paidBy
+    );
+  }
+
   @Post("bookings/:bookingId/stripe")
   @ApiOperation({ summary: "Create a Stripe payment intent for UK booking" })
   @ApiParam({ name: "bookingId", description: "Booking ID" })
@@ -101,6 +123,17 @@ export class PaymentsController {
     return this.paymentsService.confirmStripePayment(dto.paymentIntentId);
   }
 
+  @Post("downloads/stripe/confirm")
+  @ApiOperation({
+    summary: "Confirm Stripe payment for download after client completes it",
+  })
+  @ApiResponse({ status: 200, description: "Download payment confirmed" })
+  @ApiResponse({ status: 400, description: "Payment failed or pending" })
+  @ApiResponse({ status: 404, description: "Download not found" })
+  confirmDownloadPayment(@Body() dto: ConfirmStripePaymentDto) {
+    return this.paymentsService.confirmDownloadPayment(dto.paymentIntentId);
+  }
+
   @Post("verify")
   @ApiOperation({ summary: "Admin verifies a bank transfer payment" })
   @ApiResponse({ status: 200, description: "Payment verified" })
@@ -149,6 +182,15 @@ export class PaymentsController {
   @ApiResponse({ status: 404, description: "Booking not found" })
   getBookingBalance(@Param("bookingId") bookingId: string) {
     return this.paymentsService.calculateBookingBalance(bookingId);
+  }
+
+  @Get("downloads/:downloadId")
+  @ApiOperation({ summary: "Get download payment details" })
+  @ApiParam({ name: "downloadId", description: "Download Selection ID" })
+  @ApiResponse({ status: 200, description: "Returns download payment details" })
+  @ApiResponse({ status: 404, description: "Download not found" })
+  getDownloadPayment(@Param("downloadId") downloadId: string) {
+    return this.paymentsService.getDownloadPayment(downloadId);
   }
 
   @Get(":paymentId")

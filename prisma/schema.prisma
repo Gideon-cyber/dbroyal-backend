@@ -253,12 +253,34 @@ model DownloadSelection {
   approvedAt       DateTime?       // When the request was approved
   approvedBy       String?         // User ID who approved
   completedAt      DateTime?       // When delivery was completed (SHIPPED)
+  
+  // Delivery format selection (JSON object mapping photoId to format: "digital" or "framed")
+  photoDeliveryFormats String?     // e.g., {"photo1": "digital", "photo2": "framed"}
+  
+  // Customer details
+  customerName     String?
+  customerEmail    String?
+  customerPhone    String?
+  deliveryAddress  String?         // Required for framed photos
+  additionalNotes  String?
+  
+  // Payment information
+  paymentStatus    PaymentStatus   @default(UNPAID)
+  paymentAmount    Decimal?        @db.Decimal(10, 2)
+  paymentCurrency  String?
+  paymentMethod    PaymentMethod?
+  stripePaymentIntentId String?    @unique
+  paymentProofUrl  String?         // For Nigerian users' bank transfer proof
+  paymentVerifiedAt DateTime?      // When payment was verified
+  paymentVerifiedBy String?        // Admin who verified payment
+  
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   @@index([token])
   @@index([eventId])
   @@index([deliveryStatus])
+  @@index([paymentStatus])
   @@index([createdAt])
 }
 

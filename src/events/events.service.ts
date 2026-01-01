@@ -998,7 +998,13 @@ export class EventsService {
     startDate?: string;
     endDate?: string;
     country?: Country;
+    page?: number;
+    limit?: number;
   }) {
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 20;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
 
     if (filters?.status) {
@@ -1025,46 +1031,62 @@ export class EventsService {
       };
     }
 
-    const requests = await this.prisma.downloadSelection.findMany({
-      where,
-      include: {
-        event: {
-          include: {
-            client: true,
-            service: true,
+    const [requests, total] = await Promise.all([
+      this.prisma.downloadSelection.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          event: {
+            include: {
+              client: true,
+              service: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      this.prisma.downloadSelection.count({ where }),
+    ]);
 
-    return requests.map((req) => ({
-      id: req.id,
-      token: req.token,
-      event: {
-        id: req.event.id,
-        name: req.event.name,
-        service: req.event.service,
-        date: req.event.date,
+    return {
+      data: requests.map((req) => ({
+        id: req.id,
+        token: req.token,
+        event: {
+          id: req.event.id,
+          name: req.event.name,
+          service: req.event.service,
+          date: req.event.date,
+        },
+        client: req.event.client
+          ? {
+              id: req.event.client.id,
+              name: req.event.client.name,
+              email: req.event.client.email,
+            }
+          : null,
+        photoCount: req.photoCount,
+        deliverables: req.deliverables,
+        deliveryStatus: req.deliveryStatus,
+        paymentStatus: req.paymentStatus,
+        paymentAmount: req.paymentAmount,
+        paymentCurrency: req.paymentCurrency,
+        createdAt: req.createdAt,
+        expiresAt: req.expiresAt,
+        approvedAt: req.approvedAt,
+        completedAt: req.completedAt,
+        rejectionReason: req.rejectionReason,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      client: req.event.client
-        ? {
-            id: req.event.client.id,
-            name: req.event.client.name,
-            email: req.event.client.email,
-          }
-        : null,
-      photoCount: req.photoCount,
-      deliverables: req.deliverables,
-      deliveryStatus: req.deliveryStatus,
-      createdAt: req.createdAt,
-      expiresAt: req.expiresAt,
-      approvedAt: req.approvedAt,
-      completedAt: req.completedAt,
-      rejectionReason: req.rejectionReason,
-    }));
+    };
   }
 
   /**

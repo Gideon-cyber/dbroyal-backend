@@ -85,8 +85,8 @@ async function seedServices() {
             "5-mins highlight video",
           ],
           pricing: [
-            { country: Country.NG, price: 950000, currency: "NGN" },
-            { country: Country.UK, price: 500, currency: "USD" },
+            { country: Country.NG, price: 1900000, currency: "NGN" },
+            { country: Country.UK, price: 1000, currency: "USD" },
           ],
         },
         {
@@ -96,13 +96,13 @@ async function seedServices() {
           sortOrder: 1,
           features: [
             "Full day coverage",
-            "2 photographers + 1 videographer",
+            "2 photographers",
             "150 edited photos",
-            "10-mins highlight video + full video",
+            "10-mins highlight video",
           ],
           pricing: [
-            { country: Country.NG, price: 1500000, currency: "NGN" },
-            { country: Country.UK, price: 850, currency: "USD" },
+            { country: Country.NG, price: 2850000, currency: "NGN" },
+            { country: Country.UK, price: 1500, currency: "USD" },
           ],
         },
         {
@@ -111,15 +111,16 @@ async function seedServices() {
           description: "Premium coverage for traditional and white wedding",
           sortOrder: 2,
           features: [
-            "2 day coverage (traditional + white wedding)",
+            "2-day coverage (traditional + white wedding)",
             "Drone footage",
+            "2 Photographers",
+            "1 Videographer",
             "Photo album",
-            "Framed print",
             "200 edited photos",
           ],
           pricing: [
-            { country: Country.NG, price: 2200000, currency: "NGN" },
-            { country: Country.UK, price: 1200, currency: "USD" },
+            { country: Country.NG, price: 4750000, currency: "NGN" },
+            { country: Country.UK, price: 2500, currency: "USD" },
           ],
         },
       ],
@@ -218,14 +219,10 @@ async function seedServices() {
           slug: "basic-package",
           description: "Perfect for intimate birthday celebrations",
           sortOrder: 0,
-          features: [
-            "3-hours coverage",
-            "50 edited photos",
-            "5-mins highlight video",
-          ],
+          features: ["3-hours coverage", "70 edited photos"],
           pricing: [
-            { country: Country.NG, price: 270000, currency: "NGN" },
-            { country: Country.UK, price: 150, currency: "USD" },
+            { country: Country.NG, price: 570000, currency: "NGN" },
+            { country: Country.UK, price: 300, currency: "USD" },
           ],
         },
         {
@@ -235,13 +232,13 @@ async function seedServices() {
           sortOrder: 1,
           features: [
             "6-hour coverage",
-            "100 edited photos",
+            "120 edited photos",
             "3-mins highlight video",
             "10-mins highlight video + full video",
           ],
           pricing: [
-            { country: Country.NG, price: 570000, currency: "NGN" },
-            { country: Country.UK, price: 300, currency: "USD" },
+            { country: Country.NG, price: 1140000, currency: "NGN" },
+            { country: Country.UK, price: 600, currency: "USD" },
           ],
         },
         {
@@ -251,13 +248,12 @@ async function seedServices() {
           sortOrder: 2,
           features: [
             "Full day coverage",
-            "150 edited photos",
-            "10-mins highlight video + photo album",
             "200 edited photos",
+            "10-mins highlight video + photo album",
           ],
           pricing: [
-            { country: Country.NG, price: 950000, currency: "NGN" },
-            { country: Country.UK, price: 500, currency: "USD" },
+            { country: Country.NG, price: 1900000, currency: "NGN" },
+            { country: Country.UK, price: 1000, currency: "USD" },
           ],
         },
       ],
@@ -276,13 +272,12 @@ async function seedServices() {
           sortOrder: 0,
           features: [
             "4-hours coverage",
-            "50 edited photos",
+            "100 edited photos",
             "3-mins recap video",
-            "5-mins highlight video",
           ],
           pricing: [
-            { country: Country.NG, price: 475000, currency: "NGN" },
-            { country: Country.UK, price: 250, currency: "USD" },
+            { country: Country.NG, price: 950000, currency: "NGN" },
+            { country: Country.UK, price: 500, currency: "USD" },
           ],
         },
         {
@@ -292,13 +287,12 @@ async function seedServices() {
           sortOrder: 1,
           features: [
             "Full day coverage",
-            "100 edited photos",
+            "150 edited photos",
             "5-mins recap video",
-            "10-mins highlight video + full video",
           ],
           pricing: [
-            { country: Country.NG, price: 760000, currency: "NGN" },
-            { country: Country.UK, price: 400, currency: "USD" },
+            { country: Country.NG, price: 1520000, currency: "NGN" },
+            { country: Country.UK, price: 800, currency: "USD" },
           ],
         },
         {
@@ -310,12 +304,11 @@ async function seedServices() {
             "Full day coverage",
             "2 photographers",
             "Drone footage",
-            "Printed album (20 pages)",
-            "200 edited photos",
+            "Printed album (30 pages)",
           ],
           pricing: [
-            { country: Country.NG, price: 1014000, currency: "NGN" },
-            { country: Country.UK, price: 600, currency: "USD" },
+            { country: Country.NG, price: 1900000, currency: "NGN" },
+            { country: Country.UK, price: 1000, currency: "USD" },
           ],
         },
       ],
