@@ -131,7 +131,7 @@ model PackagePricing {
   package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
   country     Country
   price       Decimal  @db.Decimal(10, 2) // Price in local currency
-  currency    String   // e.g., "USD", "NGN"
+  currency    String   // e.g., "GBP", "NGN"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

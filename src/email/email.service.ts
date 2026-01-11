@@ -207,7 +207,7 @@ export class EmailService {
       EU: "EUR",
     };
 
-    return country ? countryToCurrency[country.toUpperCase()] || "USD" : "USD";
+    return country ? countryToCurrency[country.toUpperCase()] || "GBP" : "GBP";
   }
 
   /**

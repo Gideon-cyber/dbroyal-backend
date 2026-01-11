@@ -86,7 +86,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1900000, currency: "NGN" },
-            { country: Country.UK, price: 1000, currency: "USD" },
+            { country: Country.UK, price: 1000, currency: "GBP" },
           ],
         },
         {
@@ -102,7 +102,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 2850000, currency: "NGN" },
-            { country: Country.UK, price: 1500, currency: "USD" },
+            { country: Country.UK, price: 1500, currency: "GBP" },
           ],
         },
         {
@@ -120,7 +120,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 4750000, currency: "NGN" },
-            { country: Country.UK, price: 2500, currency: "USD" },
+            { country: Country.UK, price: 2500, currency: "GBP" },
           ],
         },
       ],
@@ -145,7 +145,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 475000, currency: "NGN" },
-            { country: Country.UK, price: 250, currency: "USD" },
+            { country: Country.UK, price: 250, currency: "GBP" },
           ],
         },
         {
@@ -163,7 +163,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 855000, currency: "NGN" },
-            { country: Country.UK, price: 550, currency: "USD" },
+            { country: Country.UK, price: 550, currency: "GBP" },
           ],
         },
         {
@@ -182,7 +182,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1420000, currency: "NGN" },
-            { country: Country.UK, price: 750, currency: "USD" },
+            { country: Country.UK, price: 750, currency: "GBP" },
           ],
         },
         {
@@ -201,7 +201,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 2090000, currency: "NGN" },
-            { country: Country.UK, price: 1100, currency: "USD" },
+            { country: Country.UK, price: 1100, currency: "GBP" },
           ],
         },
       ],
@@ -222,7 +222,7 @@ async function seedServices() {
           features: ["3-hours coverage", "70 edited photos"],
           pricing: [
             { country: Country.NG, price: 570000, currency: "NGN" },
-            { country: Country.UK, price: 300, currency: "USD" },
+            { country: Country.UK, price: 300, currency: "GBP" },
           ],
         },
         {
@@ -238,7 +238,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1140000, currency: "NGN" },
-            { country: Country.UK, price: 600, currency: "USD" },
+            { country: Country.UK, price: 600, currency: "GBP" },
           ],
         },
         {
@@ -253,7 +253,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1900000, currency: "NGN" },
-            { country: Country.UK, price: 1000, currency: "USD" },
+            { country: Country.UK, price: 1000, currency: "GBP" },
           ],
         },
       ],
@@ -277,7 +277,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 950000, currency: "NGN" },
-            { country: Country.UK, price: 500, currency: "USD" },
+            { country: Country.UK, price: 500, currency: "GBP" },
           ],
         },
         {
@@ -292,7 +292,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1520000, currency: "NGN" },
-            { country: Country.UK, price: 800, currency: "USD" },
+            { country: Country.UK, price: 800, currency: "GBP" },
           ],
         },
         {
@@ -308,7 +308,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 1900000, currency: "NGN" },
-            { country: Country.UK, price: 1000, currency: "USD" },
+            { country: Country.UK, price: 1000, currency: "GBP" },
           ],
         },
       ],
@@ -332,7 +332,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 190000, currency: "NGN" },
-            { country: Country.UK, price: 100, currency: "USD" },
+            { country: Country.UK, price: 100, currency: "GBP" },
           ],
         },
         {
@@ -348,7 +348,7 @@ async function seedServices() {
           ],
           pricing: [
             { country: Country.NG, price: 228000, currency: "NGN" },
-            { country: Country.UK, price: 120, currency: "USD" },
+            { country: Country.UK, price: 120, currency: "GBP" },
           ],
         },
       ],
@@ -384,29 +384,82 @@ async function seedServices() {
               slug: pkgInfo.slug,
             },
           },
+          include: {
+            features: true,
+            pricing: true,
+          },
         });
 
         if (existingPackage) {
-          console.log(`    ✓ Package "${pkgInfo.name}" already exists`);
-          continue;
-        }
+          console.log(`    ↻ Updating package "${pkgInfo.name}"`);
 
-        await prisma.package.create({
-          data: {
-            ...pkgInfo,
-            serviceId: service.id,
-            features: {
-              create: features.map((feature, index) => ({
-                feature,
-                sortOrder: index,
-              })),
+          // Update package details
+          await prisma.package.update({
+            where: { id: existingPackage.id },
+            data: {
+              ...pkgInfo,
             },
-            pricing: {
-              create: pricing, // Create pricing for all countries
+          });
+
+          // Delete old features and create new ones
+          await prisma.packageFeature.deleteMany({
+            where: { packageId: existingPackage.id },
+          });
+          await prisma.packageFeature.createMany({
+            data: features.map((feature, index) => ({
+              packageId: existingPackage.id,
+              feature,
+              sortOrder: index,
+            })),
+          });
+
+          // Update pricing for each country
+          for (const priceData of pricing) {
+            const existingPrice = existingPackage.pricing.find(
+              (p) => p.country === priceData.country
+            );
+
+            if (existingPrice) {
+              await prisma.packagePricing.update({
+                where: { id: existingPrice.id },
+                data: {
+                  price: priceData.price,
+                  currency: priceData.currency,
+                },
+              });
+              console.log(
+                `      ✓ Updated pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`
+              );
+            } else {
+              await prisma.packagePricing.create({
+                data: {
+                  packageId: existingPackage.id,
+                  ...priceData,
+                },
+              });
+              console.log(
+                `      ✓ Created pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`
+              );
+            }
+          }
+        } else {
+          await prisma.package.create({
+            data: {
+              ...pkgInfo,
+              serviceId: service.id,
+              features: {
+                create: features.map((feature, index) => ({
+                  feature,
+                  sortOrder: index,
+                })),
+              },
+              pricing: {
+                create: pricing, // Create pricing for all countries
+              },
             },
-          },
-        });
-        console.log(`    ✓ Created package: ${pkgInfo.name}`);
+          });
+          console.log(`    ✓ Created package: ${pkgInfo.name}`);
+        }
       }
     }
   }

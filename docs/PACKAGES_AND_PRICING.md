@@ -65,7 +65,7 @@ model PackagePricing {
   packageId String
   country   Country
   price     Decimal  @db.Decimal(10, 2)
-  currency  String   // "USD", "NGN"
+  currency  String   // "GBP", "NGN"
 }
 ```
 
@@ -287,7 +287,7 @@ Authorization: Bearer <token>
     {
       "country": "UK",
       "price": 250,
-      "currency": "USD"
+      "currency": "GBP"
     }
   ],
   "sortOrder": 0
@@ -436,7 +436,7 @@ const essentialPackage = await prisma.package.create({
     pricing: {
       create: [
         { country: "NG", price: 475000, currency: "NGN" },
-        { country: "UK", price: 250, currency: "USD" },
+        { country: "UK", price: 250, currency: "GBP" },
       ],
     },
   },
