@@ -54,7 +54,7 @@ async function bootstrap() {
     "http://localhost:5173", // Vite default
     "http://localhost:5174",
     "http://localhost:8000",
-    "https://daily-checkin-six.vercel.app", // Production frontend
+    "https://dbroyal.studio", // Production frontend
     process.env.FRONTEND_URL, // Custom frontend URL
   ].filter(Boolean);
 
