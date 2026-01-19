@@ -334,8 +334,8 @@ async function seedServices() {
             "1 hour session (Studio shoot only)",
           ],
           pricing: [
-            { country: Country.NG, price: 190000, currency: "NGN" },
-            { country: Country.UK, price: 100, currency: "GBP" },
+            { country: Country.NG, price: 285000, currency: "NGN" },
+            { country: Country.UK, price: 150, currency: "GBP" },
           ],
         },
         {
@@ -350,8 +350,8 @@ async function seedServices() {
             "Studio/outdoor shoot",
           ],
           pricing: [
-            { country: Country.NG, price: 228000, currency: "NGN" },
-            { country: Country.UK, price: 120, currency: "GBP" },
+            { country: Country.NG, price: 380000, currency: "NGN" },
+            { country: Country.UK, price: 200, currency: "GBP" },
           ],
         },
       ],
@@ -419,7 +419,7 @@ async function seedServices() {
           // Update pricing for each country
           for (const priceData of pricing) {
             const existingPrice = existingPackage.pricing.find(
-              (p) => p.country === priceData.country
+              (p) => p.country === priceData.country,
             );
 
             if (existingPrice) {
@@ -431,7 +431,7 @@ async function seedServices() {
                 },
               });
               console.log(
-                `      ✓ Updated pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`
+                `      ✓ Updated pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`,
               );
             } else {
               await prisma.packagePricing.create({
@@ -441,7 +441,7 @@ async function seedServices() {
                 },
               });
               console.log(
-                `      ✓ Created pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`
+                `      ✓ Created pricing for ${priceData.country}: ${priceData.price} ${priceData.currency}`,
               );
             }
           }
@@ -514,6 +514,13 @@ async function seedAddOns() {
         description: "Premium framed print of your favourite photo",
         sortOrder: 3,
         priceGBP: 150,
+      },
+      {
+        name: "Studio Charge",
+        slug: "studio-charge",
+        description: "Studio rental and setup fee",
+        sortOrder: 4,
+        priceGBP: 60,
       },
     ],
 
@@ -622,7 +629,7 @@ async function seedAddOns() {
 
         for (const pricing of pricingData) {
           const existingPricing = existingAddOn.pricing.find(
-            (p) => p.country === pricing.country
+            (p) => p.country === pricing.country,
           );
 
           if (existingPricing) {
@@ -695,7 +702,7 @@ async function migrateExistingEvents() {
 
       if (!service) {
         console.log(
-          `  ⚠️  Service not found for slug: ${fullSlug}, skipping event ${event.id}`
+          `  ⚠️  Service not found for slug: ${fullSlug}, skipping event ${event.id}`,
         );
         continue;
       }
@@ -704,7 +711,7 @@ async function migrateExistingEvents() {
         UPDATE "Event" SET "serviceId" = ${service.id} WHERE id = ${event.id}
       `;
       console.log(
-        `  ✓ Migrated event ${event.id} from ${event.category} to ${service.title}`
+        `  ✓ Migrated event ${event.id} from ${event.category} to ${service.title}`,
       );
     }
   } catch (error) {
