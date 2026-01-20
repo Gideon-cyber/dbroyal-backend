@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   UseGuards,
+  Res,
 } from "@nestjs/common";
 import { DownloadsService } from "./downloads.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -25,6 +26,7 @@ import {
   UploadPaymentProofDto,
   VerifyPaymentDto,
 } from "./dto";
+import { Response } from "express";
 
 @ApiTags("downloads")
 @Controller("downloads")
@@ -81,7 +83,7 @@ export class DownloadsController {
     return this.downloadsService.approveDownloadRequest(
       id,
       body.approvedBy,
-      body.deliverables
+      body.deliverables,
     );
   }
 
@@ -132,7 +134,7 @@ export class DownloadsController {
   async reject(@Param("id") id: string, @Body() body: RejectDownloadDto) {
     return this.downloadsService.rejectDownloadRequest(
       id,
-      body.rejectionReason
+      body.rejectionReason,
     );
   }
 
@@ -184,6 +186,40 @@ export class DownloadsController {
     return this.downloadsService.getByToken(token);
   }
 
+  @Get("token/:token/zip")
+  @ApiOperation({
+    summary: "Download selected photos as zip",
+    description:
+      "Public endpoint to download all selected photos as a zip archive. The zip file will be named after the event.",
+  })
+  @ApiParam({
+    name: "token",
+    description: "Unique download token",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Zip file download started",
+    headers: {
+      "Content-Type": {
+        description: "application/zip",
+      },
+      "Content-Disposition": {
+        description: 'attachment; filename="event_name_photos.zip"',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Download not found or no photos available",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Download link has expired",
+  })
+  async downloadAsZip(@Param("token") token: string, @Res() res: Response) {
+    return this.downloadsService.downloadAsZip(token, res);
+  }
+
   @Get("event/:eventId")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -224,11 +260,11 @@ export class DownloadsController {
   })
   async updateDeliveryFormat(
     @Param("id") id: string,
-    @Body() body: UpdateDeliveryFormatDto
+    @Body() body: UpdateDeliveryFormatDto,
   ) {
     return this.downloadsService.updateDeliveryFormat(
       id,
-      body.photoDeliveryFormats
+      body.photoDeliveryFormats,
     );
   }
 
@@ -252,7 +288,7 @@ export class DownloadsController {
   })
   async updateCustomerDetails(
     @Param("id") id: string,
-    @Body() body: UpdateCustomerDetailsDto
+    @Body() body: UpdateCustomerDetailsDto,
   ) {
     return this.downloadsService.updateCustomerDetails(id, {
       customerName: body.customerName,
@@ -283,7 +319,7 @@ export class DownloadsController {
   })
   async uploadPaymentProof(
     @Param("id") id: string,
-    @Body() body: UploadPaymentProofDto
+    @Body() body: UploadPaymentProofDto,
   ) {
     return this.downloadsService.uploadPaymentProof(id, {
       paymentProofUrl: body.paymentProofUrl,

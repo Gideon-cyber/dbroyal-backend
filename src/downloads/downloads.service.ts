@@ -3,12 +3,16 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
 import { DeliveryStatus, PaymentStatus } from "@prisma/client";
 import { randomBytes } from "crypto";
+import { GoogleDriveService } from "../google-drive/google-drive.service";
+import archiver from "archiver";
+import { Response } from "express";
 
 @Injectable()
 export class DownloadsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly googleDriveService: GoogleDriveService,
   ) {}
 
   /**
@@ -29,6 +33,12 @@ export class DownloadsService {
       throw new NotFoundException("Event not found");
     }
 
+    // Set delivery status based on country
+    const isUK = event.country === "UK";
+    const deliveryStatus = isUK
+      ? DeliveryStatus.PENDING_PAYMENT
+      : DeliveryStatus.PENDING_APPROVAL;
+
     const downloadSelection = await this.prisma.downloadSelection.create({
       data: {
         eventId: data.eventId,
@@ -36,7 +46,7 @@ export class DownloadsService {
         token,
         expiresAt: data.expiresAt,
         photoCount: data.photoIds.length,
-        deliveryStatus: DeliveryStatus.PENDING_APPROVAL,
+        deliveryStatus,
       },
     });
 
@@ -49,7 +59,7 @@ export class DownloadsService {
   async approveDownloadRequest(
     id: string,
     approvedBy: string,
-    deliverables?: string
+    deliverables?: string,
   ) {
     const downloadSelection = await this.prisma.downloadSelection.findUnique({
       where: { id },
@@ -158,13 +168,71 @@ export class DownloadsService {
       throw new NotFoundException("Download selection not found");
     }
 
-    return selection;
+    return this.serializeBigInt(selection);
   }
 
   /**
    * Get download selection by token (for public access)
    */
   async getByToken(token: string) {
+    const selection = await this.prisma.downloadSelection.findUnique({
+      where: { token },
+      include: {
+        event: {
+          include: {
+            // photos: true,
+            client: true,
+          },
+        },
+      },
+    });
+
+    if (!selection) {
+      throw new NotFoundException("Download not found");
+    }
+
+    // Check if expired
+    if (selection.expiresAt && new Date() > selection.expiresAt) {
+      throw new Error("Download link has expired");
+    }
+
+    // Convert BigInt values to strings for JSON serialization
+    return this.serializeBigInt(selection);
+  }
+
+  /**
+   * Recursively convert BigInt values to strings for JSON serialization
+   */
+  private serializeBigInt(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (typeof obj === "bigint") {
+      return obj.toString();
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.serializeBigInt(item));
+    }
+
+    if (typeof obj === "object") {
+      const serialized: any = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          serialized[key] = this.serializeBigInt(obj[key]);
+        }
+      }
+      return serialized;
+    }
+
+    return obj;
+  }
+
+  /**
+   * Download selected photos as a zip file
+   */
+  async downloadAsZip(token: string, res: Response) {
     const selection = await this.prisma.downloadSelection.findUnique({
       where: { token },
       include: {
@@ -186,7 +254,99 @@ export class DownloadsService {
       throw new Error("Download link has expired");
     }
 
-    return selection;
+    // Parse photo IDs from the stored JSON
+    const rawPhotoIds: string[] = JSON.parse(selection.photoIds as string);
+
+    // The photoIds might be stored as stringified objects, so parse them
+    const photoData = rawPhotoIds.map((item) => {
+      try {
+        // If it's a stringified object, parse it
+        if (typeof item === "string" && item.startsWith("{")) {
+          const parsed = JSON.parse(item);
+          return {
+            id: parsed.id,
+            driveFileId: parsed.googleDriveFileId || parsed.driveFileId,
+          };
+        }
+        // Otherwise, treat it as a simple ID
+        return { id: item, driveFileId: null };
+      } catch {
+        return { id: item, driveFileId: null };
+      }
+    });
+
+    console.log("Parsed photo data:", photoData);
+    console.log(
+      "Available event photos:",
+      selection.event.photos.map((p) => ({
+        id: p.id,
+        driveFileId: p.driveFileId,
+      })),
+    );
+
+    // Match photos by driveFileId or id
+    const photos = selection.event.photos.filter((photo) => {
+      return photoData.some((data) =>
+        data.driveFileId
+          ? photo.driveFileId === data.driveFileId
+          : photo.id === data.id,
+      );
+    });
+
+    console.log("Filtered photos count:", photos.length);
+
+    if (photos.length === 0) {
+      throw new NotFoundException(
+        "No photos found for this download. Please ensure the photos exist in the event.",
+      );
+    }
+
+    // Filter photos that have driveFileId
+    const downloadablePhotos = photos.filter((photo) => photo.driveFileId);
+
+    if (downloadablePhotos.length === 0) {
+      throw new NotFoundException(
+        "No downloadable photos found. Photos must be synced from Google Drive.",
+      );
+    }
+
+    // Set response headers for zip download
+    const zipFilename = `${selection.event.name.replace(/[^a-z0-9]/gi, "_")}_photos.zip`;
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${zipFilename}"`,
+    );
+
+    // Create archiver instance
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // Maximum compression
+    });
+
+    // Pipe archive to response
+    archive.pipe(res);
+
+    // Handle errors
+    archive.on("error", (err) => {
+      throw new Error(`Archive creation failed: ${err.message}`);
+    });
+
+    // Download and add each photo to the archive
+    for (const photo of downloadablePhotos) {
+      try {
+        const { buffer, filename } =
+          await this.googleDriveService.downloadFileAsBuffer(
+            photo.driveFileId!,
+          );
+        archive.append(buffer, { name: filename });
+      } catch (error) {
+        console.error(`Failed to download photo ${photo.id}:`, error);
+        // Continue with other photos even if one fails
+      }
+    }
+
+    // Finalize the archive
+    await archive.finalize();
   }
 
   /**
@@ -204,7 +364,7 @@ export class DownloadsService {
    */
   async updateDeliveryFormat(
     id: string,
-    photoDeliveryFormats: Record<string, "digital" | "framed">
+    photoDeliveryFormats: Record<string, "digital" | "framed">,
   ) {
     const selection = await this.prisma.downloadSelection.findUnique({
       where: { id },
@@ -233,7 +393,7 @@ export class DownloadsService {
       customerPhone: string;
       deliveryAddress?: string;
       additionalNotes?: string;
-    }
+    },
   ) {
     const selection = await this.prisma.downloadSelection.findUnique({
       where: { id },
@@ -265,7 +425,7 @@ export class DownloadsService {
       bankName?: string;
       transferReference?: string;
       notes?: string;
-    }
+    },
   ) {
     const selection = await this.prisma.downloadSelection.findUnique({
       where: { id },
@@ -326,7 +486,7 @@ export class DownloadsService {
         .catch((error) => {
           console.error(
             "Failed to send payment proof confirmation email:",
-            error
+            error,
           );
         });
     }
@@ -414,7 +574,7 @@ export class DownloadsService {
       amount: number;
       currency: string;
       stripePaymentIntentId: string;
-    }
+    },
   ) {
     const selection = await this.prisma.downloadSelection.findUnique({
       where: { id },
