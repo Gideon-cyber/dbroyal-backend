@@ -214,7 +214,20 @@ export class EventsService {
       );
     }
 
-    return this.prisma.event.update({ where: { id }, data });
+    const updatedEvent = await this.prisma.event.update({ where: { id }, data });
+
+    // Trigger photo sync if Google Drive URL exists
+    if (updatedEvent.googleDriveUrl) {
+      // Use the country parameter or get it from the updated event
+      const syncCountry = country || updatedEvent.country;
+      
+      // Run sync in background (don't await)
+      this.syncPhotosFromGoogleDrive(updatedEvent.id, syncCountry).catch((error) => {
+        console.error(`Failed to auto-sync event ${updatedEvent.id}:`, error.message);
+      });
+    }
+
+    return updatedEvent;
   }
 
   async remove(id: string, country?: Country) {
