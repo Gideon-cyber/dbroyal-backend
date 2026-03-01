@@ -210,6 +210,26 @@ export class BookingsService {
         : null;
       const isDepositBooking = depositAmount !== null && depositAmount > 0;
 
+      // Notify admin about the new booking regardless of country
+      this.emailService
+        .sendAdminBookingNotification({
+          clientName: booking.client.name,
+          clientEmail: booking.client.email,
+          serviceName,
+          eventDate: booking.dateTime.toLocaleDateString(),
+          packageName: booking.package.name,
+          amount: Number(booking.price || 0),
+          addOns: emailAddOns,
+          totalAmount: bookingWithTotals.pricing.totalPrice,
+          depositAmount: isDepositBooking ? depositAmount : undefined,
+          currency: booking.currency,
+          country: booking.country,
+          notes: booking.notes,
+        })
+        .catch((error) => {
+          console.error("Failed to send admin booking notification:", error);
+        });
+
       // UK bookings get automatic confirmation, Nigeria bookings need approval
       if (booking.country === Country.UK) {
         this.emailService

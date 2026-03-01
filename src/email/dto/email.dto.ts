@@ -370,3 +370,71 @@ export class DownloadReadyEmailDto {
   @IsOptional()
   country?: string;
 }
+
+export class AdminBookingNotificationDto {
+  @ApiProperty({ description: "Client name" })
+  @IsString()
+  clientName: string;
+
+  @ApiProperty({ description: "Client email" })
+  @IsEmail()
+  clientEmail: string;
+
+  @ApiProperty({ description: "Service name" })
+  @IsString()
+  serviceName: string;
+
+  @ApiProperty({ description: "Event date" })
+  @IsString()
+  eventDate: string;
+
+  @ApiProperty({ description: "Package name" })
+  @IsString()
+  packageName: string;
+
+  @ApiProperty({ description: "Package price" })
+  @IsNumber()
+  amount: number;
+
+  @ApiProperty({ description: "Currency code", required: false })
+  @IsString()
+  @IsOptional()
+  currency?: string;
+
+  @ApiProperty({ description: "Country code", required: false })
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @ApiProperty({ description: "Booking notes", required: false })
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @ApiProperty({
+    description: "Add-ons included in the booking",
+    type: [BookingAddOnEmailDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  addOns?: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+
+  @ApiProperty({
+    description: "Total amount including add-ons",
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  totalAmount?: number;
+
+  @ApiProperty({ description: "Deposit amount", required: false })
+  @IsNumber()
+  @IsOptional()
+  depositAmount?: number;
+}
