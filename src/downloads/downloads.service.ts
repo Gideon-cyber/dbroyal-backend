@@ -50,6 +50,21 @@ export class DownloadsService {
       },
     });
 
+    this.emailService
+      .sendAdminDownloadNotification({
+        clientName: event.client.name,
+        clientEmail: event.client.email ?? "",
+        eventName: event.name,
+        eventDate: event.date?.toLocaleDateString() ?? "N/A",
+        photoCount: data.photoIds.length,
+        country: event.country,
+        deliveryStatus,
+        downloadSelectionId: downloadSelection.id,
+      })
+      .catch((error) => {
+        console.error("Failed to send admin download notification:", error);
+      });
+
     return downloadSelection;
   }
 

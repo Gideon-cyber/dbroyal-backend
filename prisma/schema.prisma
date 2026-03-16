@@ -330,7 +330,8 @@ model Booking {
   event          Event?          @relation(fields: [eventId], references: [id])
   clientId       String
   client         Client          @relation(fields: [clientId], references: [id])
-  dateTime       DateTime
+  startDateTime  DateTime
+  endDateTime    DateTime?       // Null for single-time bookings; set for multi-day/ranged bookings
   location       String?
   notes          String?         // Additional booking notes or requirements
   price          Decimal?        @db.Decimal(10, 2) // Booked price (captured at booking time)
@@ -355,7 +356,8 @@ model Booking {
   @@index([clientId])
   @@index([packageId])
   @@index([eventId])
-  @@index([dateTime])
+  @@index([startDateTime])
+  @@index([endDateTime])
   @@index([country])
   @@index([paymentStatus])
 }

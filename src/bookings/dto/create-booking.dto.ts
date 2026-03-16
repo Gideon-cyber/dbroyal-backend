@@ -44,12 +44,24 @@ export class CreateBookingDto {
   clientId: string;
 
   @ApiProperty({
-    description: "Booking date and time",
+    description: "Booking start date and time",
     type: String,
     format: "date-time",
+    example: "2026-05-07T09:00:00.000Z",
   })
   @IsDateString()
-  dateTime: string;
+  startDateTime: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Booking end date and time (required for multi-day/ranged bookings, optional for single-time bookings)",
+    type: String,
+    format: "date-time",
+    example: "2026-05-12T18:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  endDateTime?: string;
 
   @ApiPropertyOptional({ description: "Booking location" })
   @IsOptional()

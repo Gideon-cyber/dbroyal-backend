@@ -7,6 +7,7 @@ import {
   BookingAcceptedEmailDto,
   DownloadReadyEmailDto,
   AdminBookingNotificationDto,
+  AdminDownloadNotificationDto,
 } from "./dto/email.dto";
 
 @Injectable()
@@ -234,6 +235,40 @@ export class EmailService {
     } catch (error) {
       this.logger.error(
         `Failed to send admin booking notification: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Send new download request notification email to admin
+   */
+  async sendAdminDownloadNotification(
+    dto: AdminDownloadNotificationDto,
+  ): Promise<void> {
+    const adminEmail = process.env.SMTP_FROM;
+    if (!adminEmail) {
+      this.logger.warn(
+        "SMTP_FROM not set — skipping admin download notification",
+      );
+      return;
+    }
+
+    try {
+      const subject = `New Download Request - ${dto.eventName} (${dto.country || "Unknown"})`;
+      const html = this.getAdminDownloadNotificationTemplate(dto);
+
+      await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: adminEmail,
+        subject,
+        html,
+      });
+
+      this.logger.log(`Admin download notification sent to ${adminEmail}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send admin download notification: ${error.message}`,
       );
       throw error;
     }
@@ -793,6 +828,54 @@ export class EmailService {
               
               <p>We hope you love your photos as much as we enjoyed capturing them!</p>
               <p>If you have any issues with the download or have any questions, please don't hesitate to contact us.</p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} DB Royal Photography. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  private getAdminDownloadNotificationTemplate(
+    data: AdminDownloadNotificationDto,
+  ): string {
+    const countryBadgeColor = data.country === "NG" ? "#FF6B00" : "#673AB7";
+    const statusBadgeColor =
+      data.deliveryStatus === "PENDING_PAYMENT" ? "#2196F3" : "#FF9800";
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #673AB7; color: white; padding: 20px; text-align: center; }
+            .content { background-color: #f9f9f9; padding: 20px; margin-top: 20px; }
+            .details { background-color: white; padding: 15px; margin: 15px 0; border-left: 4px solid #673AB7; }
+            .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; color: white; font-size: 12px; font-weight: bold; }
+            .footer { text-align: center; margin-top: 20px; color: #777; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>New Download Request</h2>
+            </div>
+            <div class="content">
+              <p>A new download request has been created. Here are the details:</p>
+              <div class="details">
+                <p><strong>Client:</strong> ${data.clientName}</p>
+                <p><strong>Client Email:</strong> ${data.clientEmail}</p>
+                <p><strong>Event:</strong> ${data.eventName}</p>
+                <p><strong>Event Date:</strong> ${data.eventDate}</p>
+                <p><strong>Photos Selected:</strong> ${data.photoCount}</p>
+                <p><strong>Country:</strong> <span class="badge" style="background-color: ${countryBadgeColor};">${data.country || "Unknown"}</span></p>
+                <p><strong>Status:</strong> <span class="badge" style="background-color: ${statusBadgeColor};">${data.deliveryStatus.replace(/_/g, " ")}</span></p>
+                <p><strong>Request ID:</strong> ${data.downloadSelectionId}</p>
+              </div>
             </div>
             <div class="footer">
               <p>© ${new Date().getFullYear()} DB Royal Photography. All rights reserved.</p>

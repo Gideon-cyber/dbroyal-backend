@@ -16,7 +16,7 @@ export class DashboardService {
       0,
       23,
       59,
-      59
+      59,
     );
 
     const whereClause = country ? { country } : {};
@@ -180,7 +180,7 @@ export class DashboardService {
         0,
         23,
         59,
-        59
+        59,
       );
 
       const bookings = await this.prisma.booking.count({
@@ -208,21 +208,21 @@ export class DashboardService {
     country?: Country,
     limit = 10,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ) {
     const whereClause: any = country ? { country } : {};
     whereClause.approvalStatus = ApprovalStatus.PENDING;
 
     // Add date filtering if provided
     if (startDate || endDate) {
-      whereClause.dateTime = {};
+      whereClause.startDateTime = {};
       if (startDate) {
-        whereClause.dateTime.gte = new Date(startDate);
+        whereClause.startDateTime.gte = new Date(startDate);
       }
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        whereClause.dateTime.lte = end;
+        whereClause.startDateTime.lte = end;
       }
     }
 
@@ -262,7 +262,7 @@ export class DashboardService {
       serviceSlug: booking.event?.service?.slug || "other-services",
       clientName: booking.client.name,
       location: booking.location,
-      dateTime: booking.dateTime,
+      dateTime: booking.startDateTime,
       approvalStatus: booking.approvalStatus,
       createdAt: booking.createdAt,
     }));
@@ -322,14 +322,14 @@ export class DashboardService {
             acc[uploaderName].push(photo);
             return acc;
           },
-          {} as Record<string, typeof event.photos>
+          {} as Record<string, typeof event.photos>,
         );
 
         // Get the first uploader for display
         const firstUploader = Object.keys(photosByUploader)[0];
         const totalPhotos = event.photos.length;
         const completedPhotos = event.photos.filter(
-          (p) => p.status === "COMPLETE"
+          (p) => p.status === "COMPLETE",
         ).length;
         const pendingPhotos = totalPhotos - completedPhotos;
 
@@ -349,7 +349,7 @@ export class DashboardService {
 
     const totalUploadsToday = recentUploads.reduce(
       (sum, upload) => sum + upload.totalPhotos,
-      0
+      0,
     );
 
     return {
@@ -367,7 +367,7 @@ export class DashboardService {
         ...whereClause,
         status: BookingStatus.SCHEDULED,
         approvalStatus: ApprovalStatus.APPROVED,
-        dateTime: { gte: now },
+        startDateTime: { gte: now },
       },
       include: {
         client: {
@@ -402,7 +402,7 @@ export class DashboardService {
           },
         },
       },
-      orderBy: { dateTime: "asc" },
+      orderBy: { startDateTime: "asc" },
       take: limit,
     });
 
@@ -412,7 +412,7 @@ export class DashboardService {
       service: booking.event?.service?.title || "Other Services",
       serviceSlug: booking.event?.service?.slug || "other-services",
       clientName: booking.client.name,
-      dateTime: booking.dateTime,
+      dateTime: booking.startDateTime,
       location: booking.location,
       assignedTo: booking.assigned.map((a) => a.user.name),
       status: booking.status,

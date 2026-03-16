@@ -16,7 +16,8 @@ export class BookingsService {
     packageId: string;
     eventId?: string;
     clientId: string;
-    dateTime: string | Date;
+    startDateTime: string | Date;
+    endDateTime?: string | Date | null;
     location?: string;
     notes?: string;
     approvalStatus?: ApprovalStatus;
@@ -27,8 +28,10 @@ export class BookingsService {
     depositAmount?: number;
   }) {
     const { assignedUserIds, addOns, ...rest } = data;
-    if (typeof rest.dateTime === "string")
-      rest.dateTime = new Date(rest.dateTime);
+    if (typeof rest.startDateTime === "string")
+      rest.startDateTime = new Date(rest.startDateTime);
+    if (rest.endDateTime && typeof rest.endDateTime === "string")
+      rest.endDateTime = new Date(rest.endDateTime);
 
     // Fetch package pricing for the booking country (outside transaction)
     const packageWithPricing = await this.prisma.package.findUnique({
@@ -105,6 +108,32 @@ export class BookingsService {
           currency: pricing.currency,
         };
       });
+    }
+
+    // Enforce 3-hour buffer between bookings
+    const newStart = rest.startDateTime as Date;
+    const newEnd = (rest.endDateTime as Date | undefined) ?? newStart;
+    const threeHours = 3 * 60 * 60 * 1000;
+    const conflict = await this.prisma.booking.findFirst({
+      where: {
+        status: { not: BookingStatus.CANCELED },
+        startDateTime: { lt: new Date(newEnd.getTime() + threeHours) },
+        OR: [
+          { endDateTime: { gt: new Date(newStart.getTime() - threeHours) } },
+          {
+            endDateTime: null,
+            startDateTime: { gt: new Date(newStart.getTime() - threeHours) },
+          },
+        ],
+      },
+      select: { id: true, startDateTime: true, endDateTime: true, title: true },
+    });
+    if (conflict) {
+      const conflictStart = conflict.startDateTime.toLocaleString();
+      throw new BadRequestException(
+        `Booking conflicts with an existing booking starting at ${conflictStart}. ` +
+          `There must be at least 3 hours between bookings.`,
+      );
     }
 
     // Capture price at booking time
@@ -216,7 +245,7 @@ export class BookingsService {
           clientName: booking.client.name,
           clientEmail: booking.client.email,
           serviceName,
-          eventDate: booking.dateTime.toLocaleDateString(),
+          eventDate: booking.startDateTime.toLocaleDateString(),
           packageName: booking.package.name,
           amount: Number(booking.price || 0),
           addOns: emailAddOns,
@@ -237,7 +266,7 @@ export class BookingsService {
             to: booking.client.email,
             clientName: booking.client.name,
             serviceName,
-            eventDate: booking.dateTime.toLocaleDateString(),
+            eventDate: booking.startDateTime.toLocaleDateString(),
             packageName: booking.package.name,
             amount: Number(booking.price || 0),
             addOns: emailAddOns,
@@ -255,7 +284,7 @@ export class BookingsService {
             to: booking.client.email,
             clientName: booking.client.name,
             serviceName,
-            eventDate: booking.dateTime.toLocaleDateString(),
+            eventDate: booking.startDateTime.toLocaleDateString(),
             packageName: booking.package.name,
             amount: Number(booking.price || 0),
             addOns: emailAddOns,
@@ -287,14 +316,14 @@ export class BookingsService {
 
     // Add date filtering if provided
     if (startDate || endDate) {
-      where.dateTime = {};
+      where.startDateTime = {};
       if (startDate) {
-        where.dateTime.gte = new Date(startDate);
+        where.startDateTime.gte = new Date(startDate);
       }
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        where.dateTime.lte = end;
+        where.startDateTime.lte = end;
       }
     }
 
@@ -325,7 +354,7 @@ export class BookingsService {
             },
           },
         },
-        orderBy: { dateTime: "desc" },
+        orderBy: { startDateTime: "desc" },
       }),
       this.prisma.booking.count({ where }),
     ]);
@@ -386,8 +415,10 @@ export class BookingsService {
       }
     }
 
-    if (data?.dateTime && typeof data.dateTime === "string")
-      data.dateTime = new Date(data.dateTime);
+    if (data?.startDateTime && typeof data.startDateTime === "string")
+      data.startDateTime = new Date(data.startDateTime);
+    if (data?.endDateTime && typeof data.endDateTime === "string")
+      data.endDateTime = new Date(data.endDateTime);
 
     const updatedBooking = await this.prisma.booking.update({
       where: { id },
@@ -444,7 +475,7 @@ export class BookingsService {
           to: updatedBooking.client.email,
           clientName: updatedBooking.client.name,
           serviceName,
-          eventDate: updatedBooking.dateTime.toLocaleDateString(),
+          eventDate: updatedBooking.startDateTime.toLocaleDateString(),
           packageName: updatedBooking.package?.name || "Package",
           amount: Number(updatedBooking.price || 0),
           addOns: emailAddOns,
@@ -518,7 +549,7 @@ export class BookingsService {
             ...whereClause,
             status: BookingStatus.SCHEDULED,
             approvalStatus: ApprovalStatus.APPROVED,
-            dateTime: { gte: new Date() },
+            startDateTime: { gte: new Date() },
           },
         }),
       ]);

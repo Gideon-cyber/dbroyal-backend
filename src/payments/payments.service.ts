@@ -577,8 +577,8 @@ export class PaymentsService {
         clientName: booking.client.name,
         serviceName:
           booking.package.service?.title || booking.title || "Your Service",
-        eventDate: booking.dateTime
-          ? new Date(booking.dateTime).toLocaleDateString("en-US", {
+        eventDate: booking.startDateTime
+          ? new Date(booking.startDateTime).toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",

@@ -15,14 +15,31 @@ export class GoogleDriveService {
   private drive: drive_v3.Drive;
 
   constructor(private configService: ConfigService) {
+    // Get the private key and normalize it to handle both formats:
+    // 1. Escaped \n strings (from .env files): "-----BEGIN PRIVATE KEY-----\nMII..."
+    // 2. Actual newlines (from some hosting platforms): "-----BEGIN PRIVATE KEY-----
+    //    MII..."
+    let privateKey = this.configService.get<string>(
+      "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
+    );
+
+    if (privateKey) {
+      // Remove any quotes that might be present
+      privateKey = privateKey.replace(/^["']|["']$/g, "");
+
+      // If it contains \n as a string (not actual newlines), replace them
+      if (privateKey.includes("\\n")) {
+        privateKey = privateKey.replace(/\\n/g, "\n");
+      }
+      // If it already has actual newlines, no conversion needed
+    }
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: this.configService.get<string>(
-          "GOOGLE_SERVICE_ACCOUNT_EMAIL"
+          "GOOGLE_SERVICE_ACCOUNT_EMAIL",
         ),
-        private_key: this.configService
-          .get<string>("GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY")
-          ?.replace(/\\n/g, "\n"),
+        private_key: privateKey,
       },
       scopes: [
         "https://www.googleapis.com/auth/drive.readonly",
@@ -32,6 +49,11 @@ export class GoogleDriveService {
     });
 
     this.drive = google.drive({ version: "v3", auth });
+
+    // Log initialization status (without exposing sensitive data)
+    this.logger.log(
+      `GoogleDriveService initialized with email: ${this.configService.get<string>("GOOGLE_SERVICE_ACCOUNT_EMAIL")?.substring(0, 20)}...`,
+    );
   }
 
   /**
@@ -104,10 +126,10 @@ export class GoogleDriveService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to fetch images from Google Drive: ${errorMessage}`
+        `Failed to fetch images from Google Drive: ${errorMessage}`,
       );
       throw new InternalServerErrorException(
-        "Failed to fetch images from Google Drive. Ensure the folder is shared with the service account."
+        "Failed to fetch images from Google Drive. Ensure the folder is shared with the service account.",
       );
     }
   }
@@ -143,8 +165,8 @@ export class GoogleDriveService {
               requestBody: {
                 parents: [folderId],
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -166,7 +188,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to create shareable link: ${errorMessage}`);
       throw new InternalServerErrorException(
-        "Failed to create shareable link for selected photos"
+        "Failed to create shareable link for selected photos",
       );
     }
   }
@@ -183,7 +205,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to generate download link: ${errorMessage}`);
       throw new InternalServerErrorException(
-        "Failed to generate download link"
+        "Failed to generate download link",
       );
     }
   }
@@ -220,11 +242,11 @@ export class GoogleDriveService {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
             this.logger.warn(
-              `Failed to fetch metadata for file ${fileId}: ${errorMessage}`
+              `Failed to fetch metadata for file ${fileId}: ${errorMessage}`,
             );
             return null;
           }
-        })
+        }),
       );
 
       return filesData.filter(Boolean);
@@ -240,7 +262,7 @@ export class GoogleDriveService {
    * Download file content as buffer (useful for ZIP creation)
    */
   async downloadFileAsBuffer(
-    fileId: string
+    fileId: string,
   ): Promise<{ buffer: Buffer; filename: string }> {
     try {
       const file = await this.drive.files.get({
@@ -253,7 +275,7 @@ export class GoogleDriveService {
           fileId,
           alt: "media",
         },
-        { responseType: "arraybuffer" }
+        { responseType: "arraybuffer" },
       );
 
       return {
@@ -265,7 +287,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to download file ${fileId}: ${errorMessage}`);
       throw new InternalServerErrorException(
-        `Failed to download file: ${errorMessage}`
+        `Failed to download file: ${errorMessage}`,
       );
     }
   }
@@ -286,7 +308,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to get start page token: ${errorMessage}`);
       throw new InternalServerErrorException(
-        "Failed to initialize change tracking"
+        "Failed to initialize change tracking",
       );
     }
   }
@@ -297,7 +319,7 @@ export class GoogleDriveService {
    */
   async fetchImageChanges(
     folderId: string,
-    pageToken: string
+    pageToken: string,
   ): Promise<{
     images: {
       id: string;
@@ -376,7 +398,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to fetch image changes: ${errorMessage}`);
       throw new InternalServerErrorException(
-        "Failed to sync changes from Google Drive"
+        "Failed to sync changes from Google Drive",
       );
     }
   }
@@ -387,7 +409,7 @@ export class GoogleDriveService {
    */
   async fetchImagesIncremental(
     folderUrl: string,
-    pageToken?: string
+    pageToken?: string,
   ): Promise<{
     images: {
       id: string;
@@ -426,7 +448,7 @@ export class GoogleDriveService {
     // Otherwise, fetch only changes
     const { images, newPageToken } = await this.fetchImageChanges(
       folderId,
-      pageToken
+      pageToken,
     );
     return { images, newPageToken, isFullSync: false };
   }
@@ -477,7 +499,7 @@ export class GoogleDriveService {
    */
   async streamFile(
     fileId: string,
-    thumbnailSize?: number
+    thumbnailSize?: number,
   ): Promise<{
     stream: any;
     mimeType: string;
@@ -500,7 +522,7 @@ export class GoogleDriveService {
           fileId,
           alt: "media",
         },
-        { responseType: "stream" }
+        { responseType: "stream" },
       );
 
       return {
@@ -513,7 +535,7 @@ export class GoogleDriveService {
         error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to stream file ${fileId}: ${errorMessage}`);
       throw new InternalServerErrorException(
-        `Failed to stream file: ${errorMessage}`
+        `Failed to stream file: ${errorMessage}`,
       );
     }
   }
@@ -528,7 +550,7 @@ export class GoogleDriveService {
   async streamOptimizedImage(
     fileId: string,
     maxWidth: number = 800,
-    quality: number = 85
+    quality: number = 85,
   ): Promise<{
     stream: any;
     mimeType: string;
@@ -536,7 +558,7 @@ export class GoogleDriveService {
   }> {
     try {
       this.logger.log(
-        `Optimizing image ${fileId}: max-width=${maxWidth}px, quality=${quality}%`
+        `Optimizing image ${fileId}: max-width=${maxWidth}px, quality=${quality}%`,
       );
 
       // Download file from Google Drive
@@ -545,7 +567,7 @@ export class GoogleDriveService {
           fileId,
           alt: "media",
         },
-        { responseType: "arraybuffer" }
+        { responseType: "arraybuffer" },
       );
 
       const buffer = Buffer.from(response.data as ArrayBuffer);
@@ -567,7 +589,7 @@ export class GoogleDriveService {
       const stream = Readable.from(optimizedBuffer);
 
       this.logger.log(
-        `Optimized ${fileId}: ${buffer.length} -> ${optimizedBuffer.length} bytes (${Math.round((1 - optimizedBuffer.length / buffer.length) * 100)}% reduction)`
+        `Optimized ${fileId}: ${buffer.length} -> ${optimizedBuffer.length} bytes (${Math.round((1 - optimizedBuffer.length / buffer.length) * 100)}% reduction)`,
       );
 
       return {
@@ -582,7 +604,7 @@ export class GoogleDriveService {
 
       // Fallback to full-size if optimization fails
       this.logger.warn(
-        `Falling back to full-size image for ${fileId} due to optimization error`
+        `Falling back to full-size image for ${fileId} due to optimization error`,
       );
       return this.streamFile(fileId);
     }

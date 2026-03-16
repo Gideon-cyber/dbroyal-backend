@@ -438,3 +438,14 @@ export class AdminBookingNotificationDto {
   @IsOptional()
   depositAmount?: number;
 }
+
+export class AdminDownloadNotificationDto {
+  clientName: string;
+  clientEmail: string;
+  eventName: string;
+  eventDate: string;
+  photoCount: number;
+  country?: string;
+  deliveryStatus: string;
+  downloadSelectionId: string;
+}
