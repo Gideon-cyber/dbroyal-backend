@@ -14,12 +14,11 @@ RUN yarn install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Generate Prisma Client (DATABASE_URL is required by prisma.config.ts but not used during generation)
-RUN DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder \
-    DIRECT_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder \
-    npx prisma generate
+# Placeholder vars satisfy prisma.config.ts during build (no DB connection is made)
+ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
+ENV DIRECT_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 
-# Build the application
+# Generate Prisma Client and build (the pre-build script also runs prisma generate)
 RUN yarn build
 
 # Production stage
