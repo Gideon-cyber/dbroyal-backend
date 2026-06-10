@@ -55,7 +55,12 @@ export class EmailService {
         depositAmount,
       });
 
-      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to,
+        subject,
+        html,
+      });
 
       this.logger.log(`Booking confirmation email sent to ${to}`);
     } catch (error) {
@@ -98,7 +103,12 @@ export class EmailService {
         currency: currency || this.getCurrencyFromCountry(country),
       });
 
-      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to,
+        subject,
+        html,
+      });
 
       this.logger.log(`Booking pending approval email sent to ${to}`);
     } catch (error) {
@@ -143,7 +153,12 @@ export class EmailService {
         currency: currency || this.getCurrencyFromCountry(country),
       });
 
-      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to,
+        subject,
+        html,
+      });
 
       this.logger.log(`Booking accepted email sent to ${to}`);
     } catch (error) {
@@ -160,7 +175,7 @@ export class EmailService {
   async sendAdminBookingNotification(
     dto: AdminBookingNotificationDto,
   ): Promise<void> {
-    const adminEmail = process.env.SMTP_FROM;
+    const adminEmail = process.env.ADMIN_EMAIL;
     if (!adminEmail) {
       this.logger.warn(
         "ADMIN_EMAIL not set — skipping admin booking notification",
@@ -172,7 +187,12 @@ export class EmailService {
       const subject = `New Booking Request - ${dto.serviceName} (${dto.country || "Unknown"})}`;
       const html = this.getAdminBookingNotificationTemplate(dto);
 
-      await this.resend.emails.send({ from: this.fromAddress, to: adminEmail, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to: adminEmail,
+        subject,
+        html,
+      });
 
       this.logger.log(`Admin booking notification sent to ${adminEmail}`);
     } catch (error) {
@@ -189,10 +209,10 @@ export class EmailService {
   async sendAdminDownloadNotification(
     dto: AdminDownloadNotificationDto,
   ): Promise<void> {
-    const adminEmail = process.env.SMTP_FROM;
+    const adminEmail = process.env.ADMIN_EMAIL;
     if (!adminEmail) {
       this.logger.warn(
-        "SMTP_FROM not set — skipping admin download notification",
+        "ADMIN_EMAIL not set — skipping admin download notification",
       );
       return;
     }
@@ -201,7 +221,12 @@ export class EmailService {
       const subject = `New Download Request - ${dto.eventName} (${dto.country || "Unknown"})`;
       const html = this.getAdminDownloadNotificationTemplate(dto);
 
-      await this.resend.emails.send({ from: this.fromAddress, to: adminEmail, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to: adminEmail,
+        subject,
+        html,
+      });
 
       this.logger.log(`Admin download notification sent to ${adminEmail}`);
     } catch (error) {
@@ -227,7 +252,12 @@ export class EmailService {
         expiresAt,
       });
 
-      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
+      await this.resend.emails.send({
+        from: this.fromAddress,
+        to,
+        subject,
+        html,
+      });
 
       this.logger.log(`Download ready email sent to ${to}`);
     } catch (error) {
