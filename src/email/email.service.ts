@@ -1,6 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import * as nodemailer from "nodemailer";
-import { Transporter } from "nodemailer";
+import { Resend } from "resend";
 import {
   BookingConfirmationEmailDto,
   BookingPendingApprovalEmailDto,
@@ -13,49 +12,13 @@ import {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: Transporter;
+  private resend: Resend;
+  private fromAddress: string;
 
   constructor() {
-    // Log configuration (without password) for debugging
-    this.logger.log(
-      `Configuring SMTP with host: ${process.env.SMTP_HOST}, port: ${process.env.SMTP_PORT}, user: ${process.env.SMTP_USER}`,
-    );
-
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.titan.email",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_SECURE === "true", // false for TLS, true for SSL
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      // Add these options for better compatibility with Titan
-      tls: {
-        ciphers: "SSLv3",
-        rejectUnauthorized: false,
-      },
-      // Enable debug mode
-      debug: true,
-      logger: true,
-    });
-
-    // Verify connection on startup
-    this.verifyConnection();
-  }
-
-  /**
-   * Verify SMTP connection
-   */
-  private async verifyConnection(): Promise<void> {
-    try {
-      await this.transporter.verify();
-      this.logger.log("SMTP connection verified successfully");
-    } catch (error) {
-      this.logger.error(
-        `SMTP connection verification failed: ${error.message}`,
-      );
-      this.logger.error("Please check your SMTP credentials in the .env file");
-    }
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+    this.fromAddress = process.env.SMTP_FROM || "onboarding@resend.dev";
+    this.logger.log(`Email service ready (from: ${this.fromAddress})`);
   }
 
   /**
@@ -92,17 +55,12 @@ export class EmailService {
         depositAmount,
       });
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
 
       this.logger.log(`Booking confirmation email sent to ${to}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send booking confirmation email: ${error.message}`,
+        `Failed to send booking confirmation email: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -140,17 +98,12 @@ export class EmailService {
         currency: currency || this.getCurrencyFromCountry(country),
       });
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
 
       this.logger.log(`Booking pending approval email sent to ${to}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send booking pending approval email: ${error.message}`,
+        `Failed to send booking pending approval email: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -190,17 +143,12 @@ export class EmailService {
         currency: currency || this.getCurrencyFromCountry(country),
       });
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
 
       this.logger.log(`Booking accepted email sent to ${to}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send booking accepted email: ${error.message}`,
+        `Failed to send booking accepted email: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -224,17 +172,12 @@ export class EmailService {
       const subject = `New Booking Request - ${dto.serviceName} (${dto.country || "Unknown"})}`;
       const html = this.getAdminBookingNotificationTemplate(dto);
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: adminEmail,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to: adminEmail, subject, html });
 
       this.logger.log(`Admin booking notification sent to ${adminEmail}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send admin booking notification: ${error.message}`,
+        `Failed to send admin booking notification: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -258,17 +201,12 @@ export class EmailService {
       const subject = `New Download Request - ${dto.eventName} (${dto.country || "Unknown"})`;
       const html = this.getAdminDownloadNotificationTemplate(dto);
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: adminEmail,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to: adminEmail, subject, html });
 
       this.logger.log(`Admin download notification sent to ${adminEmail}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send admin download notification: ${error.message}`,
+        `Failed to send admin download notification: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -289,17 +227,12 @@ export class EmailService {
         expiresAt,
       });
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-      });
+      await this.resend.emails.send({ from: this.fromAddress, to, subject, html });
 
       this.logger.log(`Download ready email sent to ${to}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send download ready email: ${error.message}`,
+        `Failed to send download ready email: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
